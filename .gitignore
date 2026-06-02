@@ -102,3 +102,6 @@ env/
 # Project logs
 logs/
 *.log
+
+# Collected static files for WhiteNoise
+staticfiles/
