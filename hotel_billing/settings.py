@@ -137,7 +137,7 @@ WHITENOISE_MANIFEST_STRICT = False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# SMTP Email Configuration for Aether Hotels
+# SMTP Email Configuration for La_Makaan Hotels
 import os
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -146,5 +146,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'vu.241fa04488@gmail.com'
 # Securely extract the Google App Password from the local environment
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'svkjowtvfiixnlac')
-DEFAULT_FROM_EMAIL = 'Aether Luxury Hotels <vu.241fa04488@gmail.com>'
+DEFAULT_FROM_EMAIL = 'La_Makaan Hotels <vu.241fa04488@gmail.com>'
 

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Invoice {{ invoice.invoice_number }} | Aether Hotel Billing{% endblock %}
+{% block title %}Invoice {{ invoice.invoice_number }} | La_Makaan Hotels{% endblock %}
 
 {% block content %}
 <!-- Receipt Actions (Hidden in physical print) -->
@@ -37,11 +37,11 @@
     <!-- Receipt Header -->
     <div class="receipt-header">
         <div class="brand-details">
-            <h2>AETHER LUXURY HOTELS</h2>
+            <h2>LA_MAKAAN HOTELS</h2>
             <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500; line-height: 1.4;">
-                Aether Elite Towers, Suite 800<br>
+                La_Makaan Elite Towers, Suite 800<br>
                 Tech City Central, 400013<br>
-                contact@aetherluxury.com | +91 22 8900 1200
+                contact@lamakaanhotels.com | +91 22 8900 1200
             </p>
         </div>
         <div class="receipt-meta">
@@ -189,7 +189,7 @@
     <!-- Receipt Footer -->
     <div class="receipt-footer">
         <p style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.25rem;">THANK YOU FOR YOUR STAY</p>
-        <p>Hope to welcome you back at Aether Luxury Hotels soon.</p>
+        <p>Hope to welcome you back at La_Makaan Hotels soon.</p>
     </div>
 
 </div>
@@ -223,7 +223,7 @@
                     </div>
                     <div>
                         <strong style="color: var(--text-primary); font-size: 0.9rem;">Scan & Pay via UPI App</strong>
-                        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.15rem;">Merchant VPA: <code>pay@aetherluxury</code></p>
+                        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.15rem;">Merchant VPA: <code>pay@lamakaanhotels</code></p>
                     </div>
                 </div>
             </div>
@@ -409,7 +409,7 @@
             ctx.font = 'bold 28px Georgia, serif';
             ctx.fillStyle = '#c5a880';
             ctx.textAlign = 'center';
-            ctx.fillText('AETHER LUXURY HOTELS', canvas.width / 2, 130);
+            ctx.fillText('LA_MAKAAN HOTELS', canvas.width / 2, 130);
             
             ctx.font = 'bold 36px Georgia, sans-serif';
             ctx.fillStyle = '#ffffff';

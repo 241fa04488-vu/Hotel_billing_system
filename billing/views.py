@@ -572,7 +572,7 @@ def send_booking_email(user, room, check_in, check_out, invoice):
     from django.template.loader import render_to_string
     from django.utils.html import strip_tags
 
-    subject = f"Aether Luxury Hotels Stay Confirmation - Room {room.room_number}"
+    subject = f"La_Makaan Hotels Stay Confirmation - Room {room.room_number}"
     
     customer_name = f"{user.first_name} {user.last_name}".strip()
     if not customer_name:
@@ -613,7 +613,7 @@ def send_otp_email(user, otp_code):
     from django.template.loader import render_to_string
     from django.utils.html import strip_tags
 
-    subject = "Aether Luxury Hotels - Stay Verification OTP Code"
+    subject = "La_Makaan Hotels - Stay Verification OTP Code"
     
     customer_name = f"{user.first_name} {user.last_name}".strip()
     if not customer_name:
@@ -717,7 +717,7 @@ def customer_verify_otp(request):
                 request.session.pop('pending_booking', None)
                 request.session.pop('booking_otp', None)
                 
-                messages.success(request, f"Room {room.room_number} booked successfully! Welcome to Aether Luxury Hotels.")
+                messages.success(request, f"Room {room.room_number} booked successfully! Welcome to La_Makaan Hotels.")
                 return redirect('customer_portal')
             except Exception as e:
                 messages.error(request, f"Error processing booking: {str(e)}")
@@ -850,7 +850,7 @@ def customer_book_room(request):
                 # Send stay confirmation email for verification
                 send_booking_email(request.user, room, check_in, check_out, invoice)
                 
-                messages.success(request, f"Room {room.room_number} booked successfully! Welcome to Aether Luxury Hotels.")
+                messages.success(request, f"Room {room.room_number} booked successfully! Welcome to La_Makaan Hotels.")
                 
         except Exception as e:
             messages.error(request, f"Error processing booking: {str(e)}")
@@ -1076,7 +1076,7 @@ def invoice_send_print_otp(request, pk):
     from django.template.loader import render_to_string
     from django.utils.html import strip_tags
 
-    subject = "Aether Luxury Hotels - Receipt Print Authorization Code"
+    subject = "La_Makaan Hotels - Receipt Print Authorization Code"
     
     customer_name = invoice.customer_name
     if not customer_name:
