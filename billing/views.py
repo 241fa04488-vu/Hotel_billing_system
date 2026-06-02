@@ -510,11 +510,13 @@ def customer_login(request):
                 user.profile.role = 'Customer'
                 user.profile.save()
             else:
-                user.set_password(password)
-                user.save()
-                if getattr(user, 'profile', None):
-                    user.profile.role = 'Customer'
-                    user.profile.save()
+                existing_role = getattr(user.profile, 'role', None) if getattr(user, 'profile', None) else None
+                if existing_role not in ['Staff', 'Manager']:
+                    user.set_password(password)
+                    user.save()
+                    if getattr(user, 'profile', None):
+                        user.profile.role = 'Customer'
+                        user.profile.save()
         else:
             messages.error(request, f"Invalid password. For guest login, password must be '{username}123'.")
             return render(request, 'login_customer.html')
