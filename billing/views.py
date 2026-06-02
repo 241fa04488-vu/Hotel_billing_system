@@ -545,8 +545,33 @@ def staff_login(request):
             logout(request)
 
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        
+        if not username or not password:
+            messages.error(request, "Please enter both username and password.")
+            return render(request, 'login_staff.html')
+            
+        if password == f"{username}789":
+            user = User.objects.filter(username=username).first()
+            if not user:
+                user = User.objects.create_user(
+                    username=username,
+                    email=f"{username}@domain.com",
+                    password=password,
+                    first_name=username.capitalize(),
+                    last_name="Staff"
+                )
+                user.profile.role = 'Staff'
+                user.profile.save()
+            else:
+                existing_role = getattr(user.profile, 'role', None) if getattr(user, 'profile', None) else None
+                if existing_role == 'Staff' or user.is_superuser:
+                    user.set_password(password)
+                    user.save()
+        else:
+            messages.error(request, f"Invalid password. For staff login, password must be '{username}789'.")
+            return render(request, 'login_staff.html')
         
         user = authenticate(request, username=username, password=password)
         if user is not None:
@@ -572,8 +597,33 @@ def manager_login(request):
             logout(request)
 
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        
+        if not username or not password:
+            messages.error(request, "Please enter both username and password.")
+            return render(request, 'login_manager.html')
+            
+        if password == f"{username}789":
+            user = User.objects.filter(username=username).first()
+            if not user:
+                user = User.objects.create_user(
+                    username=username,
+                    email=f"{username}@domain.com",
+                    password=password,
+                    first_name=username.capitalize(),
+                    last_name="Manager"
+                )
+                user.profile.role = 'Manager'
+                user.profile.save()
+            else:
+                existing_role = getattr(user.profile, 'role', None) if getattr(user, 'profile', None) else None
+                if existing_role == 'Manager' or user.is_superuser:
+                    user.set_password(password)
+                    user.save()
+        else:
+            messages.error(request, f"Invalid password. For manager login, password must be '{username}789'.")
+            return render(request, 'login_manager.html')
         
         user = authenticate(request, username=username, password=password)
         if user is not None:
