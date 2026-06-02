@@ -104,6 +104,17 @@ def room_add(request):
     return redirect('room_list')
 
 
+@role_required('Staff', 'Manager')
+def room_release(request, pk):
+    if request.method == 'POST':
+        room = get_object_or_404(Room, pk=pk)
+        old_status = room.status
+        room.status = 'Available'
+        room.save()
+        messages.success(request, f"Room {room.room_number} status transitioned from {old_status} to Available.")
+    return redirect('room_list')
+
+
 # -------------------------------------------------------------
 # 3. INVOICINGS & CHECKOUTS (Role Protected)
 # -------------------------------------------------------------

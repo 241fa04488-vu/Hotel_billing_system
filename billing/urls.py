@@ -20,6 +20,7 @@ urlpatterns = [
     # Rooms & Inventories
     path('rooms/', views.room_list, name='room_list'),
     path('rooms/add/', views.room_add, name='room_add'),
+    path('rooms/<int:pk>/release/', views.room_release, name='room_release'),
     
     # Invoices & Ledgers
     path('invoices/', views.invoice_list, name='invoice_list'),
