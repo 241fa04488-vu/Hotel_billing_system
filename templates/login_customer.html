@@ -32,11 +32,12 @@
                     {% csrf_token %}
                     <div class="form-group">
                         <label for="cust-username" style="font-size:0.75rem;">Username</label>
-                        <input type="text" id="cust-username" name="username" placeholder="customer" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        <input type="text" id="cust-username" name="username" placeholder="Enter any username" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
                     </div>
                     <div class="form-group">
                         <label for="cust-password" style="font-size:0.75rem;">Password</label>
-                        <input type="password" id="cust-password" name="password" placeholder="••••••••" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        <input type="password" id="cust-password" name="password" placeholder="username123" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        <small style="color: rgba(244, 63, 94, 0.7); font-size: 0.7rem; margin-top: 0.25rem; display: block; font-weight: 500;">Password must be your username followed by '123' (e.g. john123).</small>
                     </div>
                     <button type="submit" class="btn" style="background: linear-gradient(135deg, #f43f5e, #e11d48); color: #ffffff; width: 100%; padding: 0.75rem; font-weight: 700; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.25); margin-top: 0.25rem;">
                         <span>Access Portal</span>
