@@ -1190,18 +1190,11 @@ def invoice_verify_print_otp(request, pk):
 def invoice_print_view(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     
-    # Access control: Verify print authorization
-    session_auth = request.session.get('print_authorized_inv')
-    is_staff = request.user.profile.role != 'Customer' or request.user.is_superuser
-    
-    # Only allow if session flag is set for this invoice or if they bypass via staff desk
-    if session_auth != pk and not is_staff:
-        messages.error(request, "Unauthorized print request. Please verify email via OTP first.")
-        return redirect('invoice_detail', pk=pk)
-        
-    # Clear authorization flag so it cannot be reused
-    if 'print_authorized_inv' in request.session:
-        del request.session['print_authorized_inv']
+    # Check access role: restrict Customer from printing other guests' invoices
+    user_role = getattr(getattr(request.user, 'profile', None), 'role', None)
+    if user_role == 'Customer' and invoice.customer_user != request.user and not request.user.is_superuser:
+        messages.error(request, "Access denied. You do not have permission to print this invoice.")
+        return redirect('customer_portal')
         
     items = invoice.items.all()
     subtotal = invoice.room_charges + (invoice.extra_charges or 0)

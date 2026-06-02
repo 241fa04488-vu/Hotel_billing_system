@@ -24,8 +24,7 @@
             <span>Make Payment Now</span>
         </button>
         {% endif %}
-        {% if request.user.profile.role != 'Customer' or request.user.is_superuser %}
-        <!-- Staff: Print directly bypassing OTP -->
+        <!-- Print Receipt directly for everyone -->
         <a href="{% url 'invoice_print_view' invoice.pk %}" target="_blank" class="btn btn-primary"
             style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); text-decoration: none;">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -34,17 +33,6 @@
             </svg>
             <span>Print Receipt</span>
         </a>
-        {% else %}
-        <!-- Customer: Print through OTP Verification -->
-        <button onclick="openPrintOtpModal()" class="btn btn-primary"
-            style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            <span>Print Receipt</span>
-        </button>
-        {% endif %}
         <a href="{% url 'invoice_create' %}" class="btn btn-secondary">New Invoice</a>
     </div>
 </div>
@@ -399,45 +387,7 @@
         </div>
     </div>
 
-    <!-- OTP Verification Modal for Printing Receipt -->
-    <div id="print-otp-modal" class="modal-overlay no-print"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 2000; animation: fadeIn 0.3s ease-out;">
-        <div class="glass-card"
-            style="width: 100%; max-width: 420px; padding: 2.25rem; border: 1px solid var(--primary); border-radius: var(--radius-lg); background: rgba(30, 41, 59, 0.95); text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
 
-            <div
-                style="display: inline-flex; padding: 0.85rem; border-radius: 50%; background: rgba(197, 168, 128, 0.1); border: 1px solid var(--primary); margin-bottom: 1.25rem; color: var(--primary);">
-                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            </div>
-
-            <h3 style="font-family: var(--font-heading); color: #ffffff; font-size: 1.35rem; margin-bottom: 0.5rem;">
-                Verify to Print Receipt</h3>
-            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.5rem;">
-                A secure One-Time Password (OTP) has been sent to the guest's email. Enter it below to unlock the
-                printable receipt.
-            </p>
-
-            <div style="margin-bottom: 1.5rem;">
-                <input type="text" id="print-otp-input" placeholder="000000" maxlength="6"
-                    style="width: 100%; max-width: 220px; text-align: center; font-size: 1.75rem; font-weight: bold; letter-spacing: 0.35rem; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--primary); background: rgba(15, 23, 42, 0.6); color: #ffffff; font-family: monospace; outline: none;"
-                    oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                <div id="print-otp-error"
-                    style="display: none; color: #ef4444; font-size: 0.8rem; margin-top: 0.5rem; font-weight: 600;">
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 1rem; margin-top: 1.75rem;">
-                <button type="button" onclick="verifyAndPrintReceipt()" class="btn btn-primary"
-                    style="flex: 1; background: linear-gradient(135deg, var(--primary), var(--secondary)); font-size: 0.9rem; padding: 0.65rem;">Verify
-                    & Print</button>
-                <button type="button" onclick="document.getElementById('print-otp-modal').style.display='none';"
-                    class="btn btn-secondary" style="flex: 1; font-size: 0.9rem; padding: 0.65rem;">Cancel</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         let webcamStream = null;
@@ -718,78 +668,6 @@
             }
         });
 
-        // AJAX Print OTP Helpers
-        function openPrintOtpModal() {
-            document.getElementById('print-otp-modal').style.display = 'flex';
-            document.getElementById('print-otp-error').style.display = 'none';
-            document.getElementById('print-otp-input').value = '';
 
-            fetch("{% url 'invoice_send_print_otp' invoice.pk %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log("OTP code successfully dispatched.");
-                    } else {
-                        alert("Error sending verification OTP: " + data.message);
-                    }
-                })
-                .catch(err => {
-                    console.error("AJAX dispatch error: ", err);
-                });
-        }
-
-        function verifyAndPrintReceipt() {
-            const otpInput = document.getElementById('print-otp-input').value.trim();
-            if (!otpInput) {
-                alert("Please enter the 6-digit OTP verification code.");
-                return;
-            }
-
-            // Browser Pop-up Blocker Bypass:
-            // Open the blank tab IMMEDIATELY in response to the user's click gesture
-            const printWindow = window.open("", "_blank");
-            if (printWindow) {
-                printWindow.document.write("<p style='font-family: sans-serif; text-align: center; margin-top: 100px; color: #475569;'>Authorizing print request... Please wait.</p>");
-            }
-
-            fetch("{% url 'invoice_verify_print_otp' invoice.pk %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: "otp_code=" + encodeURIComponent(otpInput)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        document.getElementById('print-otp-modal').style.display = 'none';
-                        // Redirect the already-opened printWindow to the printable view
-                        if (printWindow) {
-                            printWindow.location.href = "{% url 'invoice_print_view' invoice.pk %}";
-                        }
-                    } else {
-                        // Close the tab since authorization failed
-                        if (printWindow) {
-                            printWindow.close();
-                        }
-                        document.getElementById('print-otp-error').innerText = data.message;
-                        document.getElementById('print-otp-error').style.display = 'block';
-                    }
-                })
-                .catch(err => {
-                    console.error("AJAX verification error: ", err);
-                    if (printWindow) {
-                        printWindow.close();
-                    }
-                    alert("Print verification failed.");
-                });
-        }
     </script>
     {% endblock %}
