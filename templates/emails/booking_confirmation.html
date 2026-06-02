@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Booking Confirmed</title>
+</head>
+<body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 2rem; margin: 0;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 8px; border: 1px solid #c5a880; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.35);">
+        
+        <!-- Header -->
+        <div style="background-color: #0f172a; padding: 1.5rem; text-align: center; border-bottom: 2px solid #c5a880;">
+            <h1 style="color: #c5a880; margin: 0; font-size: 1.6rem; letter-spacing: 0.05em; font-family: 'Georgia', serif;">AETHER LUXURY HOTELS</h1>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 2.5rem 2rem;">
+            <h2 style="color: #ffffff; margin-top: 0; font-size: 1.4rem;">Stay Reservation Confirmed!</h2>
+            <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
+                Dear {{ customer_name }},
+            </p>
+            <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
+                Your request to secure stay accommodations has been officially approved. Below are your verification parameters:
+            </p>
+            
+            <!-- Details Grid -->
+            <div style="background-color: #0f172a; border-radius: 6px; padding: 1.5rem; margin: 1.5rem 0; border: 1px solid #334155;">
+                <table style="width: 100%; font-size: 0.9rem; color: #cbd5e1; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #1e293b;">
+                        <td style="padding: 0.8rem 0; font-weight: 600; color: #c5a880;">Chamber:</td>
+                        <td style="padding: 0.8rem 0; text-align: right;">Room {{ room.room_number }} ({{ room.category }})</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1e293b;">
+                        <td style="padding: 0.8rem 0; font-weight: 600; color: #c5a880;">Check-in Date:</td>
+                        <td style="padding: 0.8rem 0; text-align: right;">{{ check_in }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1e293b;">
+                        <td style="padding: 0.8rem 0; font-weight: 600; color: #c5a880;">Check-out Date:</td>
+                        <td style="padding: 0.8rem 0; text-align: right;">{{ check_out }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1e293b;">
+                        <td style="padding: 0.8rem 0; font-weight: 600; color: #c5a880;">Invoice Number:</td>
+                        <td style="padding: 0.8rem 0; text-align: right; font-family: monospace;">{{ invoice_number }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.8rem 0; font-weight: 600; color: #c5a880;">Payment Status:</td>
+                        <td style="padding: 0.8rem 0; text-align: right; font-weight: bold; color: {% if payment_status == 'Paid' %}#10b981{% else %}#f59e0b{% endif %};">{{ payment_status }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5; text-align: center; margin: 2rem 0;">
+                Total Estimated Stay Cost: <strong style="color: #10b981; font-size: 1.25rem;">₹{{ grand_total }}</strong>
+            </p>
+            
+            <p style="color: #64748b; font-size: 0.8rem; line-height: 1.4; margin-top: 2.5rem; border-top: 1px solid #334155; padding-top: 1rem; text-align: center;">
+                Please present this confirmation statement email or invoice ID during reception checkout.
+            </p>
+        </div>
+        
+    </div>
+</body>
+</html>

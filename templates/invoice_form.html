@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+{% block title %}New Invoice | Aether Hotel Billing{% endblock %}
+
+{% block content %}
+<div class="checkout-header" style="margin-bottom: 2.5rem;">
+    <h1 style="font-size: 2.25rem; font-weight: 800;">Billing Desk</h1>
+    <p style="color: var(--text-secondary); margin-top: 0.25rem;">Compile new checkout details, compute service charges, and print invoices.</p>
+</div>
+
+<form method="POST" action="{% url 'invoice_create' %}" id="invoice-checkout-form">
+    {% csrf_token %}
+    
+    <div class="layout-split" style="grid-template-columns: 1.8fr 1.2fr; gap: 2rem;">
+        
+        <!-- Left Panel: Form Details -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <!-- Customer Details Card -->
+            <div class="glass-card">
+                <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>1. Customer Profile Association</span>
+                </h2>
+                
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="customer_user_select">Associate Registered Customer (Optional)</label>
+                        <select id="customer_user_select" name="customer_user">
+                            <option value="new" selected>&bull; Register New Guest account</option>
+                            {% for cust in customers %}
+                            <option value="{{ cust.pk }}" data-name="{{ cust.first_name }} {{ cust.last_name }}" data-email="{{ cust.email }}" data-phone="{{ cust.profile.phone }}">
+                                {{ cust.first_name }} {{ cust.last_name }} ({{ cust.email }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customer_name">Guest Name *</label>
+                        <input type="text" id="customer_name" name="customer_name" placeholder="Guest full name" required pattern="[A-Za-z\s\-]{2,60}" title="Name must contain only letters, spaces, or hyphens, and be between 2 and 60 characters long.">
+                    </div>
+                    <div class="form-grid" style="grid-column: span 2; margin: 0; padding: 0;">
+                        <div class="form-group">
+                            <label for="customer_email">Email Address</label>
+                            <input type="email" id="customer_email" name="customer_email" placeholder="guest@domain.com" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Please enter a valid email address containing '@' and a domain (e.g. name@domain.com)">
+                        </div>
+                        <div class="form-group">
+                            <label for="customer_phone">Phone Number</label>
+                            <input type="tel" id="customer_phone" name="customer_phone" placeholder="e.g. 9876543210" pattern="[0-9]{10}" maxlength="10" minlength="10" title="Please enter exactly 10 digits phone number (numeric only)">
+                        </div>
+                    </div>
+                    
+                    <!-- Extra Chamber Surcharge Confirmation -->
+                    <div id="extra-room-container" style="display: none; grid-column: span 2; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-sm); padding: 1.25rem; margin-top: 1rem; animation: shake 0.4s ease-in-out;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #f59e0b; flex-shrink: 0; margin-top: 0.15rem;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div>
+                                <strong style="color: #f59e0b; font-size: 0.85rem; font-family: var(--font-heading); display: block; margin-bottom: 0.25rem;">Active Stay Booking Detected</strong>
+                                <span style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.4; display: block; margin-bottom: 0.75rem;">
+                                    This customer already has an active check-in stay or reservation registered. Proceeding will book an additional chamber stay and apply a premium **Extra Chamber Surcharge of ₹1,000.00** to this new invoice bill.
+                                </span>
+                                <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: #ffffff; font-size: 0.85rem; font-weight: 700; user-select: none;">
+                                    <input type="checkbox" id="is_extra_room" name="is_extra_room" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                                    <span>Confirm Booking of Extra Room</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const guestSelect = document.getElementById('customer_user_select');
+                    const nameInput = document.getElementById('customer_name');
+                    const emailInput = document.getElementById('customer_email');
+                    const phoneInput = document.getElementById('customer_phone');
+                    
+                    const activeCustomerIds = {{ active_customer_ids|safe }};
+                    const activeCustomerNames = {{ active_customer_names|safe }};
+                    
+                    // Synthesize warning alert chime
+                    function playTriggerSound() {
+                        try {
+                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                            
+                            // First beep
+                            const osc1 = ctx.createOscillator();
+                            const gain1 = ctx.createGain();
+                            osc1.type = 'sine';
+                            osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                            osc1.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // D5 to A5
+                            gain1.gain.setValueAtTime(0.12, ctx.currentTime);
+                            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                            osc1.connect(gain1);
+                            gain1.connect(ctx.destination);
+                            osc1.start();
+                            osc1.stop(ctx.currentTime + 0.25);
+                            
+                            // Second beep (offset)
+                            setTimeout(() => {
+                                const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+                                const osc2 = ctx2.createOscillator();
+                                const gain2 = ctx2.createGain();
+                                osc2.type = 'sine';
+                                osc2.frequency.setValueAtTime(587.33, ctx2.currentTime);
+                                osc2.frequency.exponentialRampToValueAtTime(880, ctx2.currentTime + 0.15);
+                                gain2.gain.setValueAtTime(0.12, ctx2.currentTime);
+                                gain2.gain.exponentialRampToValueAtTime(0.01, ctx2.currentTime + 0.25);
+                                osc2.connect(gain2);
+                                gain2.connect(ctx2.destination);
+                                osc2.start();
+                                osc2.stop(ctx2.currentTime + 0.25);
+                            }, 120);
+                        } catch (e) {
+                            console.log("AudioContext warning sound block:", e);
+                        }
+                    }
+                    
+                    function checkDoubleBooking() {
+                        const extraContainer = document.getElementById('extra-room-container');
+                        const extraCheckbox = document.getElementById('is_extra_room');
+                        
+                        let hasExisting = false;
+                        if (guestSelect && guestSelect.value !== 'new') {
+                            const selectedId = parseInt(guestSelect.value);
+                            if (activeCustomerIds.includes(selectedId)) {
+                                hasExisting = true;
+                            }
+                        } else if (nameInput) {
+                            const enteredName = nameInput.value.trim().toLowerCase();
+                            if (enteredName.length >= 2) {
+                                hasExisting = activeCustomerNames.some(name => name.trim().toLowerCase() === enteredName);
+                            }
+                        }
+                        
+                        if (hasExisting) {
+                            extraContainer.style.display = 'block';
+                            extraCheckbox.required = true;
+                            
+                            // Trigger warning alert chime sound
+                            playTriggerSound();
+                            
+                            // Display warning alert popup
+                            alert("⚠️ Staff Alert: Customer already holds an active stay booking!\n\nPlease verify that their registered email address (" + (emailInput.value || 'N/A') + ") is correct.\n\nIf checking in to an additional chamber room, please confirm the 'Extra Chamber Surcharge' checkbox (subject to a ₹1,000.00 surcharge).");
+                        } else {
+                            extraContainer.style.display = 'none';
+                            extraCheckbox.required = false;
+                            extraCheckbox.checked = false;
+                        }
+                    }
+                    
+                    if (guestSelect) {
+                        guestSelect.addEventListener('change', (e) => {
+                            const option = e.target.options[e.target.selectedIndex];
+                            if (option.value === 'new') {
+                                nameInput.value = '';
+                                emailInput.value = '';
+                                phoneInput.value = '';
+                                nameInput.removeAttribute('readonly');
+                                emailInput.removeAttribute('readonly');
+                                phoneInput.removeAttribute('readonly');
+                            } else {
+                                nameInput.value = option.getAttribute('data-name') || '';
+                                emailInput.value = option.getAttribute('data-email') || '';
+                                phoneInput.value = option.getAttribute('data-phone') || '';
+                                // Make pre-filled profiles read-only for absolute ledger accuracy
+                                nameInput.setAttribute('readonly', 'true');
+                                emailInput.setAttribute('readonly', 'true');
+                                phoneInput.setAttribute('readonly', 'true');
+                            }
+                            
+                            // Check double booking surcharge eligibility
+                            setTimeout(checkDoubleBooking, 100);
+                        });
+                    }
+                    
+                    if (nameInput) {
+                        nameInput.addEventListener('change', checkDoubleBooking);
+                        nameInput.addEventListener('blur', checkDoubleBooking);
+                    }
+                });
+            </script>
+
+            <!-- Stay Details Card -->
+            <div class="glass-card">
+                <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>2. Room & Stay Details</span>
+                </h2>
+                
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="room_select">Select Room *</label>
+                        <select id="room_select" name="room" required>
+                            <option value="" disabled selected>Select available room...</option>
+                            {% for room in rooms %}
+                            <option value="{{ room.pk }}" data-price="{{ room.price_per_night }}" 
+                                {% if request.GET.room_id|add:"0" == room.pk %}selected{% endif %}>
+                                Room {{ room.room_number }} - {{ room.category }} (₹{{ room.price_per_night }}/night)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="check_in_date">Check-in Date *</label>
+                        <input type="date" id="check_in_date" name="check_in_date" value="{{ today }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="check_out_date">Check-out Date *</label>
+                        <input type="date" id="check_out_date" name="check_out_date" required>
+                    </div>
+                </div>
+                
+                <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-top: 1rem; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">Calculated Stay:</span>
+                    <span style="color: var(--text-primary);">
+                        <strong id="stay_nights" style="color: var(--primary);">1</strong> Night(s) @ ₹<strong id="room_price_per_night">0.00</strong>/night
+                    </span>
+                </div>
+            </div>
+
+            <!-- Extra Service Items Card -->
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                    <h2 style="font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <span>3. Extra Hospitality Services</span>
+                    </h2>
+                    
+                    <button type="button" class="btn btn-secondary" id="btn-add-item" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Add Item</span>
+                    </button>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                        <thead>
+                            <tr>
+                                <th>Item Description</th>
+                                <th>Amount (₹)</th>
+                                <th style="text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoice-items-body">
+                            <!-- JS will dynamically populate item rows here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payment & Check-out Card -->
+            <div class="glass-card">
+                <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span>4. Ledger Adjustments & Checkout</span>
+                </h2>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="discount_input">Discount (₹)</label>
+                        <input type="number" id="discount_input" name="discount" value="0.00" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="tax_rate_input">Tax Rate (%)</label>
+                        <input type="number" id="tax_rate_input" name="tax_rate" value="12.00" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_method">Payment Method</label>
+                        <select id="payment_method" name="payment_method">
+                            <option value="Cash">Cash</option>
+                            <option value="Card">Card</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Net Banking">Net Banking</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_status">Payment Status</label>
+                        <select id="payment_status" name="payment_status">
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem; flex-direction: row; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="update_room_status" name="update_room_status" checked style="width: auto;">
+                    <label for="update_room_status" style="user-select: none;">Automatically transition Room occupancy state based on payment status</label>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Panel: Live Invoice Summary (Floating Receipt Widget) -->
+        <div style="position: sticky; top: 90px; height: fit-content; display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="glass-card" style="border-color: var(--primary); box-shadow: 0 4px 20px var(--primary-glow);">
+                <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-heading); color: var(--text-primary); text-align: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 1rem;">
+                    Summary Preview
+                </h2>
+                
+                <!-- Displayed calculations -->
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Room Base Charges</span>
+                        <span style="font-weight: 600;">₹<span id="summary_room_charges">0.00</span></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Hospitality Extras</span>
+                        <span style="font-weight: 600;">₹<span id="summary_extra_charges">0.00</span></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Taxes/Levies</span>
+                        <span style="font-weight: 600;">₹<span id="summary_tax_amount">0.00</span></span>
+                    </div>
+                    
+                    <div class="summary-line total">
+                        <span>Grand Total</span>
+                        <span>₹<span id="summary_total_amount">0.00</span></span>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs for Django form mapping validation -->
+                <input type="hidden" id="calc_room_charges" name="room_charges" value="0.00">
+                <input type="hidden" id="calc_extra_charges" name="extra_charges" value="0.00">
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.05rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Checkout Booking</span>
+                </button>
+            </div>
+            
+            <!-- Quick Tips helper card -->
+            <div class="glass-card" style="padding: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 0.75rem;">
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--info); flex-shrink: 0;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Live Recalculation</strong>
+                    Stay calculations update automatically as soon as dates or rooms change. Extra row elements can be added freely.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<script>
+    // Execute a small helper to set check-out date to tomorrow by default
+    document.addEventListener('DOMContentLoaded', () => {
+        const checkInInput = document.getElementById('check_in_date');
+        const checkOutInput = document.getElementById('check_out_date');
+        
+        if (checkInInput && checkOutInput) {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            // Format to YYYY-MM-DD
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+            checkOutInput.value = tomorrowStr;
+            
+            // Pre-run live calculator trigger
+            setTimeout(() => {
+                const roomSelect = document.getElementById('room_select');
+                if (roomSelect) {
+                    roomSelect.dispatchEvent(new Event('change'));
+                }
+            }, 100);
+        }
+    });
+</script>
+{% endblock %}

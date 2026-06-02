@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Verification Code - Aether Luxury Hotels</title>
+</head>
+<body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 2rem; margin: 0;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 8px; border: 1px solid #c5a880; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.35);">
+        
+        <!-- Header -->
+        <div style="background-color: #0f172a; padding: 1.5rem; text-align: center; border-bottom: 2px solid #c5a880;">
+            <h1 style="color: #c5a880; margin: 0; font-size: 1.6rem; letter-spacing: 0.05em; font-family: 'Georgia', serif;">AETHER LUXURY HOTELS</h1>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 2.5rem 2rem; text-align: center;">
+            <h2 style="color: #ffffff; margin-top: 0; font-size: 1.4rem;">Verify Your Stay Booking</h2>
+            <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5; text-align: left;">
+                Dear {{ customer_name }},
+            </p>
+            <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5; text-align: left;">
+                To finalize and approve your room reservation, please verify your email address. Use the following One-Time Password (OTP) verification code:
+            </p>
+            
+            <!-- OTP Display Card -->
+            <div style="background-color: #0f172a; border-radius: 6px; padding: 1.5rem; margin: 2rem auto; border: 1px solid #c5a880; max-width: 300px; display: inline-block;">
+                <span style="font-size: 2.5rem; font-weight: bold; letter-spacing: 8px; color: #c5a880; font-family: monospace; display: block;">{{ otp_code }}</span>
+            </div>
+            
+            <p style="color: #ef4444; font-size: 0.85rem; line-height: 1.5; margin: 1.5rem 0;">
+                This verification code will expire in 5 minutes. Do not share this OTP code with anyone.
+            </p>
+            
+            <p style="color: #64748b; font-size: 0.8rem; line-height: 1.4; margin-top: 2.5rem; border-top: 1px solid #334155; padding-top: 1rem; text-align: center;">
+                If you did not initiate this booking request, please disregard this email.
+            </p>
+        </div>
+        
+    </div>
+</body>
+</html>

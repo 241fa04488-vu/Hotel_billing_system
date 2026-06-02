@@ -1,0 +1,395 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Aether Hotel Billing System{% endblock %}</title>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- Sleek Corporate Left Sidebar -->
+        <aside class="sidebar no-print">
+            <div class="sidebar-brand">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span>Aether Billing</span>
+            </div>
+            
+            <div class="sidebar-menu">
+                {% if request.user.is_authenticated %}
+                    {% if request.user.profile.role == 'Staff' or request.user.profile.role == 'Manager' or request.user.is_superuser %}
+                        <a href="{% url 'dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="{% url 'room_list' %}" class="menu-item {% if request.resolver_match.url_name == 'room_list' %}active{% endif %}">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span>Rooms Inventory</span>
+                        </a>
+                        <a href="{% url 'invoice_list' %}" class="menu-item {% if request.resolver_match.url_name == 'invoice_list' %}active{% endif %}">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Invoices Ledger</span>
+                        </a>
+                    {% elif request.user.profile.role == 'Customer' %}
+                        <a href="{% url 'customer_portal' %}" class="menu-item {% if request.resolver_match.url_name == 'customer_portal' %}active{% endif %}">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>Guest Console</span>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            
+            <div class="sidebar-footer">
+                {% if request.user.is_authenticated %}
+                    <div class="user-profile-summary">
+                        <div style="font-weight: 600; font-size: 0.85rem; color: #f8fafc;">{{ request.user.username }}</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">{{ request.user.profile.role }}</div>
+                    </div>
+                    <a href="{% url 'logout_view' %}" class="btn btn-secondary logout-btn" style="padding: 0.5rem; width: 100%; font-size: 0.8rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #f8fafc;">
+                        <span>Logout</span>
+                    </a>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                        <a href="{% url 'customer_login' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem; color: #f8fafc; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);">Guest Portal</a>
+                        <a href="{% url 'staff_login' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem; color: #f8fafc; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);">Staff Desk</a>
+                    </div>
+                {% endif %}
+            </div>
+        </aside>
+
+        <!-- Main View Area -->
+        <div class="main-content">
+            <!-- Top App Bar -->
+            <header class="top-bar no-print">
+                <div class="top-bar-left">
+                    <div class="mobile-logo-brand" style="display: none; align-items: center; gap: 0.5rem;">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="stroke: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <span style="font-weight: 800; font-family: var(--font-heading); font-size: 1.15rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Aether Billing</span>
+                    </div>
+                </div>
+                <div class="top-bar-right" style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+                    {% if request.user.is_authenticated and request.user.profile.role != 'Customer' %}
+                        <a href="{% url 'invoice_create' %}" class="btn btn-primary" id="btn-quick-bill" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>New Invoice</span>
+                        </a>
+                    {% endif %}
+                    <button class="btn-theme" id="theme-toggle" aria-label="Toggle dark/light theme">
+                        <svg id="theme-icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <!-- Standard icon is injected via javascript based on loaded settings -->
+                        </svg>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Content Container -->
+            <main class="container">
+                <!-- Toast / Alerts block -->
+                {% if messages %}
+                <div class="messages-container no-print" style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    {% for message in messages %}
+                    <div class="glass-card badge {% if message.tags == 'success' %}badge-success{% elif message.tags == 'error' %}badge-danger{% else %}badge-info{% endif %}" style="padding: 1rem 1.5rem; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; justify-content: space-between; text-transform: none; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+                        <span>{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1.2rem; font-weight: bold; margin-left: 1rem;">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}
+                <!-- Dynamic Page Templates inject here -->
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Floating Room Details Modal (Luxury 3D aspect viewer) -->
+    <div id="room-details-modal" class="modal-overlay no-print" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); justify-content: center; align-items: center; z-index: 3000; animation: fadeIn 0.3s ease-out;">
+        <div class="glass-card" style="width: 90%; max-width: 750px; padding: 0; border: 1px solid var(--primary); border-radius: var(--radius-lg); background: rgba(30, 41, 59, 0.98); text-align: left; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); overflow: hidden; display: flex; flex-direction: column;">
+            
+            <!-- Modal Header / Aspect Viewport -->
+            <div style="position: relative; height: 350px; background-color: #0b0f19;">
+                <img id="modal-room-image" src="" alt="Room View" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.25s ease;">
+                
+                <!-- Close Button -->
+                <button type="button" onclick="closeRoomDetailsModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(15, 23, 42, 0.6); color: #ffffff; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; z-index: 10; outline: none;" onmouseover="this.style.background='rgba(239, 68, 68, 0.85)';" onmouseout="this.style.background='rgba(15, 23, 42, 0.6)';">&times;</button>
+                
+                <!-- Room Title overlay -->
+                <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(15,23,42,0.95), transparent); padding: 2rem 2.5rem 1.5rem; box-sizing: border-box;">
+                    <span id="modal-room-category-badge" class="badge" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.25rem 0.75rem; margin-bottom: 0.5rem; display: inline-block; font-weight: 700;">Standard</span>
+                    <h2 id="modal-room-title" style="font-family: var(--font-heading); color: #ffffff; font-size: 1.85rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0; letter-spacing: -0.02em;">Chamber 101</h2>
+                </div>
+            </div>
+            
+            <!-- Dimensional Navigation Tabs -->
+            <div style="display: flex; background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid var(--border-color); padding: 0 2.5rem; gap: 1.5rem; box-sizing: border-box;">
+                <button class="aspect-tab active" onclick="switchAspectTab('chamber', this)" style="background: none; border: none; font-family: var(--font-heading); color: var(--primary); font-weight: 700; padding: 1rem 0.5rem; border-bottom: 3px solid var(--primary); cursor: pointer; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s ease;">Chamber View</button>
+                <button class="aspect-tab" onclick="switchAspectTab('dimension', this)" style="background: none; border: none; font-family: var(--font-heading); color: var(--text-secondary); font-weight: 700; padding: 1rem 0.5rem; border-bottom: 3px solid transparent; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s ease;">Dimensional Layout</button>
+                <button class="aspect-tab" onclick="switchAspectTab('bathroom', this)" style="background: none; border: none; font-family: var(--font-heading); color: var(--text-secondary); font-weight: 700; padding: 1rem 0.5rem; border-bottom: 3px solid transparent; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s ease;">En-Suite Bath</button>
+            </div>
+            
+            <!-- Details Grid -->
+            <div style="padding: 2rem 2.5rem; display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem; background: rgba(30, 41, 59, 0.98); box-sizing: border-box;" class="modal-body-grid">
+                <!-- Left: Info & Specs -->
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div>
+                        <h4 style="color: #ffffff; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-heading); color: var(--primary);">About this Chamber</h4>
+                        <p id="modal-room-description" style="color: #cbd5e1; font-size: 0.875rem; line-height: 1.6; margin: 0;">
+                            Enjoy sophisticated interior decor and custom dynamic features.
+                        </p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem; color: #cbd5e1; font-weight: 500; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary); font-size: 1rem;">&bull;</span> <span id="modal-room-size">Size: --</span></div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary); font-size: 1rem;">&bull;</span> <span id="modal-room-bed">Bed: --</span></div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary); font-size: 1rem;">&bull;</span> <span id="modal-room-capacity">Limit: --</span></div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary); font-size: 1rem;">&bull;</span> <span id="modal-room-view">View: --</span></div>
+                    </div>
+                </div>
+                
+                <!-- Right: Comforts & Actions -->
+                <div style="display: flex; flex-direction: column; justify-content: space-between; border-left: 1px solid var(--border-color); padding-left: 2.5rem;">
+                    <div>
+                        <h4 style="color: #ffffff; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-heading); color: var(--primary);">Chamber Comforts</h4>
+                        <div id="modal-room-comforts" style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem; color: #f1f5f9; font-weight: 500;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #10b981;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>Smart Entertainment TV</div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #10b981;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>Premium stocked Mini-Bar</div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #10b981;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>Complimentary Ultra Wi-Fi</div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #10b981;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>Premium Spa Robes & Linens</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px dashed var(--border-color); padding-top: 1.25rem;">
+                        <div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Base Rate</div>
+                            <div id="modal-room-price" style="font-size: 1.4rem; color: var(--primary); font-weight: 800; font-family: var(--font-heading);">₹--</div>
+                        </div>
+                        <a id="modal-room-action-btn" href="#" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: linear-gradient(135deg, var(--primary), var(--secondary)); box-shadow: 0 4px 12px rgba(197, 168, 128, 0.25);">Book Now</a>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Floating Modal Interactive Logic -->
+    <script>
+        let currentAspectCategory = "";
+        
+        function openRoomDetailsModal(roomNum, category, price, isVacant, actionUrl, roomId) {
+            currentAspectCategory = category;
+            
+            // Resolve aspect views
+            let chamberImg = "";
+            let dimensionImg = "";
+            let bathroomImg = "";
+            
+            if (category === 'Standard') {
+                chamberImg = "{% static 'images/standard_room.png' %}";
+                dimensionImg = "{% static 'images/standard_floorplan.png' %}";
+                bathroomImg = "{% static 'images/standard_bath.png' %}";
+            } else if (category === 'Deluxe') {
+                chamberImg = "{% static 'images/deluxe_room.png' %}";
+                dimensionImg = "{% static 'images/deluxe_floorplan.png' %}";
+                bathroomImg = "{% static 'images/deluxe_bath.png' %}";
+            } else {
+                chamberImg = "{% static 'images/suite_room.png' %}";
+                dimensionImg = "{% static 'images/suite_floorplan.png' %}";
+                bathroomImg = "{% static 'images/suite_bath.png' %}";
+            }
+            
+            const modal = document.getElementById('room-details-modal');
+            modal.setAttribute('data-chamber', chamberImg);
+            modal.setAttribute('data-dimension', dimensionImg);
+            modal.setAttribute('data-bathroom', bathroomImg);
+            
+            // Set image and tabs
+            const imgEl = document.getElementById('modal-room-image');
+            imgEl.style.opacity = '0';
+            setTimeout(() => {
+                imgEl.src = chamberImg;
+                imgEl.style.opacity = '1';
+            }, 100);
+            
+            const tabs = document.querySelectorAll('.aspect-tab');
+            tabs.forEach(tab => {
+                tab.style.color = "var(--text-secondary)";
+                tab.style.borderBottomColor = "transparent";
+                tab.classList.remove('active');
+            });
+            tabs[0].style.color = "var(--primary)";
+            tabs[0].style.borderBottomColor = "var(--primary)";
+            tabs[0].classList.add('active');
+            
+            // Set descriptions & specifications
+            document.getElementById('modal-room-title').innerText = "Chamber " + roomNum;
+            const badge = document.getElementById('modal-room-category-badge');
+            badge.innerText = category + " Tier";
+            
+            if (category === 'Standard') {
+                badge.style.background = "#0284c7"; // Cyan
+                badge.style.color = "#ffffff";
+                document.getElementById('modal-room-size').innerText = "Size: 450 sq. ft.";
+                document.getElementById('modal-room-bed').innerText = "Bed: Queen Bedding";
+                document.getElementById('modal-room-capacity').innerText = "Limit: 2 Guests Max";
+                document.getElementById('modal-room-view').innerText = "View: Garden view";
+                document.getElementById('modal-room-description').innerText = "Enjoy dynamic garden views, sophisticated interior decor, single queen bedding with organic cotton linen, custom lighting settings, and full executive workstation setups.";
+            } else if (category === 'Deluxe') {
+                badge.style.background = "#10b981"; // Emerald
+                badge.style.color = "#ffffff";
+                document.getElementById('modal-room-size').innerText = "Size: 650 sq. ft.";
+                document.getElementById('modal-room-bed').innerText = "Bed: King Luxury Bedding";
+                document.getElementById('modal-room-capacity').innerText = "Limit: 3 Guests Max";
+                document.getElementById('modal-room-view').innerText = "View: City Skyline";
+                document.getElementById('modal-room-description').innerText = "Relish our premium deluxe chambers offering generous living dimensions, luxury plush king bedding, dynamic skyline views, a separate writing desk, and custom room amenities.";
+            } else {
+                badge.style.background = "linear-gradient(135deg, var(--primary), var(--secondary))"; // Gold
+                badge.style.color = "#0f172a";
+                document.getElementById('modal-room-size').innerText = "Size: 1200 sq. ft.";
+                document.getElementById('modal-room-bed').innerText = "Bed: Double King beds";
+                document.getElementById('modal-room-capacity').innerText = "Limit: 5 Guests Max";
+                document.getElementById('modal-room-view').innerText = "View: Panoramic Ocean";
+                document.getElementById('modal-room-description').innerText = "Experience the peak of hospitality inside our grand presidential suites, boasting separate living lounge quarters, panoramic ocean views, private walk-in closet structures, and marble spa facilities.";
+            }
+            
+            // Dynamically set comforts based on Category
+            const comfortsContainer = document.getElementById('modal-room-comforts');
+            let comfortsHTML = "";
+            const svgTick = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #10b981; flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>`;
+            
+            let comforts = [];
+            if (category === 'Standard') {
+                comforts = [
+                    "Complimentary High-speed Wi-Fi",
+                    "43\" Flat Screen Smart TV",
+                    "Coffee & Tea Maker setup",
+                    "Premium cotton bath linens"
+                ];
+            } else if (category === 'Deluxe') {
+                comforts = [
+                    "Ultra High-speed Wi-Fi",
+                    "55\" 4K Smart Entertainment TV",
+                    "Stocked Refreshment Mini-Bar",
+                    "Deluxe Spa Robes & Slippers",
+                    "Complimentary Bottled Water"
+                ];
+            } else {
+                comforts = [
+                    "Elite Gigabit Wi-Fi Access",
+                    "75\" 4K Smart TV & Soundbar",
+                    "Premium Stocked Open Mini-Bar",
+                    "Luxury Spa Marble Jacuzzi",
+                    "Dedicated In-room Dining Service",
+                    "Priority Lounge Access"
+                ];
+            }
+            
+            comforts.forEach(c => {
+                comfortsHTML += `<div style="display: flex; align-items: center; gap: 0.5rem;">${svgTick}${c}</div>`;
+            });
+            comfortsContainer.innerHTML = comfortsHTML;
+            
+            document.getElementById('modal-room-price').innerHTML = "₹" + parseFloat(price).toFixed(2) + "<span style='font-size:0.75rem; font-weight:500; color:var(--text-muted);'>/night</span>";
+            
+            // Set action buttons dynamically
+            const actionBtn = document.getElementById('modal-room-action-btn');
+            actionBtn.onclick = null; // reset clicks
+            
+            if (actionUrl) {
+                // Staff Console: Redirect to checkout/invoice creation
+                actionBtn.style.display = 'inline-flex';
+                actionBtn.href = actionUrl;
+                actionBtn.innerText = "Check-" + "in";
+                actionBtn.style.opacity = "1";
+                actionBtn.style.cursor = "pointer";
+            } else {
+                // Customer Portal: Trigger booking drawer modal
+                actionBtn.style.display = 'inline-flex';
+                actionBtn.href = "#";
+                actionBtn.innerText = isVacant ? "Book Now" : "Reserved";
+                
+                if (isVacant) {
+                    actionBtn.style.opacity = "1";
+                    actionBtn.style.cursor = "pointer";
+                    actionBtn.onclick = function(e) {
+                        e.preventDefault();
+                        closeRoomDetailsModal();
+                        if (typeof openBookingModal === 'function' && roomId) {
+                            openBookingModal(roomId, roomNum, price);
+                        }
+                    };
+                } else {
+                    actionBtn.style.opacity = "0.5";
+                    actionBtn.style.cursor = "not-allowed";
+                    actionBtn.onclick = function(e) { e.preventDefault(); };
+                }
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeRoomDetailsModal() {
+            document.getElementById('room-details-modal').style.display = 'none';
+        }
+        
+        function switchAspectTab(aspect, tabElement) {
+            const tabs = document.querySelectorAll('.aspect-tab');
+            tabs.forEach(tab => {
+                tab.style.color = "var(--text-secondary)";
+                tab.style.borderBottomColor = "transparent";
+                tab.classList.remove('active');
+            });
+            
+            tabElement.style.color = "var(--primary)";
+            tabElement.style.borderBottomColor = "var(--primary)";
+            tabElement.classList.add('active');
+            
+            const modal = document.getElementById('room-details-modal');
+            const imgEl = document.getElementById('modal-room-image');
+            
+            let newSrc = "";
+            if (aspect === 'chamber') {
+                newSrc = modal.getAttribute('data-chamber');
+            } else if (aspect === 'dimension') {
+                newSrc = modal.getAttribute('data-dimension');
+            } else {
+                newSrc = modal.getAttribute('data-bathroom');
+            }
+            
+            imgEl.style.opacity = '0';
+            setTimeout(() => {
+                imgEl.src = newSrc;
+                imgEl.style.opacity = '1';
+            }, 100);
+        }
+        
+        // Close modal on escape or outer overlay click
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeRoomDetailsModal();
+        });
+        document.getElementById('room-details-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeRoomDetailsModal();
+        });
+    </script>
+
+    <!-- Core Javascript Scripts -->
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

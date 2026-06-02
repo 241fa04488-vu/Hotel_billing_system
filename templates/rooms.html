@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Rooms | Aether Hotel Billing{% endblock %}
+
+{% block content %}
+<div class="rooms-header" style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 style="font-size: 2.25rem; font-weight: 800;">Rooms Inventory</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Monitor hotel room occupancy and add new rooms to inventory.</p>
+    </div>
+    <button class="btn btn-primary" id="btn-open-drawer">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>Add Room</span>
+    </button>
+</div>
+
+<!-- Rooms Grid Layout -->
+<div class="room-grid">
+    {% for room in rooms %}
+    <div class="glass-card room-card">
+        <div class="room-header">
+            <div>
+                <a href="#" onclick="openRoomDetailsModal('{{ room.room_number }}', '{{ room.category }}', '{{ room.price_per_night }}', {% if room.status == 'Available' %}true{% else %}false{% endif %}, {% if room.status == 'Available' and request.user.profile.role != 'Manager' %}'{% url 'invoice_create' %}?room_id={{ room.pk }}'{% else %}''{% endif %}, '{{ room.pk }}'); return false;" class="room-number-link" title="Click to view room details & photos" style="color: inherit; text-decoration: none; border-bottom: 2px dashed var(--primary); cursor: pointer; display: inline-block; transition: all 0.2s ease;">
+                    <span class="room-number">{{ room.room_number }}</span>
+                </a>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; margin-top: 0.15rem;">{{ room.category }}</div>
+            </div>
+            
+            {% if room.status == 'Available' %}
+            <span class="badge badge-success">Available</span>
+            {% elif room.status == 'Occupied' %}
+            <span class="badge badge-danger">Occupied</span>
+            {% else %}
+            <span class="badge badge-warning">Cleaning</span>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Rate per night</div>
+                <div class="room-price">₹{{ room.price_per_night }}</div>
+            </div>
+            
+            <!-- Quick Actions on Room -->
+            {% if room.status == 'Available' and request.user.profile.role != 'Manager' %}
+            <a href="{% url 'invoice_create' %}?room_id={{ room.pk }}" class="btn btn-secondary" style="padding: 0.5rem 0.8rem; font-size: 0.8rem; font-weight: 600;">
+                <span>Check-in</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--text-secondary);">
+        No rooms registered in the system. Use the "Add Room" drawer to register the first room.
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add Room Slide-In Drawer -->
+<div class="drawer-container" id="add-room-drawer">
+    <div class="drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-heading);">Register New Room</h2>
+            <button type="button" class="btn-close" id="btn-close-drawer" aria-label="Close drawer">&times;</button>
+        </div>
+        
+        <form action="{% url 'room_add' %}" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="room_number">Room Number *</label>
+                <input type="text" id="room_number" name="room_number" placeholder="e.g. 105, 304" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Room Category *</label>
+                <select id="category" name="category" required>
+                    <option value="" disabled selected>Select category...</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="price_per_night">Price per Night (₹) *</label>
+                <input type="number" id="price_per_night" name="price_per_night" placeholder="0.00" step="0.01" min="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="status">Initial Status</label>
+                <select id="status" name="status">
+                    {% for stat in statuses %}
+                    <option value="{{ stat }}" {% if stat == 'Available' %}selected{% endif %}>{{ stat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Save Room</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancel-drawer" onclick="document.getElementById('btn-close-drawer').click()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+<style>
+    .room-number-link:hover {
+        border-bottom-style: solid !important;
+        transform: translateY(-2px) scale(1.03);
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock %}

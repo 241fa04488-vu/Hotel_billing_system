@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Aether Hotel Billing{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 style="font-size: 2.25rem; font-weight: 800;">Hospitality Dashboard</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Real-time hotel occupancy, rooms checkouts, and sales metrics.</p>
+    </div>
+    <a href="{% url 'invoice_create' %}" class="btn btn-primary">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+        <span>Billing Desk</span>
+    </a>
+</div>
+
+<!-- Stat Grid -->
+<div class="stat-grid">
+    <!-- Active Revenue -->
+    <a href="{% url 'invoice_list' %}?status=Paid" target="_blank" class="glass-card stat-card accent-green" style="text-decoration: none; cursor: pointer; transition: transform var(--transition);" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div class="stat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div class="stat-details">
+            <h3>₹{{ total_revenue|floatformat:2 }}</h3>
+            <p>Total Revenue</p>
+        </div>
+    </a>
+    <!-- Pending Sales -->
+    <a href="{% url 'invoice_list' %}?status=Pending" target="_blank" class="glass-card stat-card accent-yellow" style="text-decoration: none; cursor: pointer; transition: transform var(--transition);" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div class="stat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div class="stat-details">
+            <h3>₹{{ pending_revenue|floatformat:2 }}</h3>
+            <p>Unpaid Invoices</p>
+        </div>
+    </a>
+    <!-- Occupied Rooms -->
+    <div class="glass-card stat-card accent-purple">
+        <div class="stat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+        </div>
+        <div class="stat-details">
+            <h3>{{ occupied_rooms }}/{{ total_rooms }}</h3>
+            <p>Occupied Rooms</p>
+        </div>
+    </div>
+    <!-- Available Rooms -->
+    <div class="glass-card stat-card accent-blue">
+        <div class="stat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div class="stat-details">
+            <h3>{{ available_rooms }}</h3>
+            <p>Rooms Available</p>
+        </div>
+    </div>
+</div>
+
+<!-- Layout Split -->
+<div class="layout-split">
+    <!-- Recent Invoices List -->
+    <div class="glass-card" style="display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.35rem; font-weight: 700;">Recent Checkout Bookings</h2>
+            <a href="{% url 'invoice_list' %}" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.25rem;">
+                <span>View All Invoices</span>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+        
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Invoice ID</th>
+                        <th>Customer</th>
+                        <th>Room</th>
+                        <th>Dates</th>
+                        <th>Grand Total</th>
+                        <th>Payment</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in recent_invoices %}
+                    <tr>
+                        <td style="font-weight: 600; font-family: var(--font-heading);">{{ invoice.invoice_number }}</td>
+                        <td style="font-weight: 500;">{{ invoice.customer_name }}</td>
+                        <td>
+                            {% if invoice.room %}
+                            <span class="badge badge-info">{{ invoice.room.room_number }}</span>
+                            {% else %}
+                            <span class="badge badge-danger">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ invoice.check_in_date|date:"M d" }} - {{ invoice.check_out_date|date:"M d, Y" }}</td>
+                        <td style="font-weight: 700;">₹{{ invoice.grand_total|floatformat:2 }}</td>
+                        <td>
+                            {% if invoice.payment_status == 'Paid' %}
+                            <span class="badge badge-success">Paid</span>
+                            {% else %}
+                            <span class="badge badge-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{% url 'invoice_detail' invoice.pk %}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span>Receipt</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                            No recent invoices. Start by creating a booking!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right Side Circular Meter and Room Stats -->
+    <div class="glass-card chart-card">
+        <div>
+            <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem;">Occupancy Level</h2>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Occupied rooms percentage capacity.</p>
+            
+            <div style="display: flex; align-items: flex-end; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 2.5rem; font-weight: 800; font-family: var(--font-heading); line-height: 1;">{{ occupancy_rate }}%</span>
+                <span style="color: var(--text-secondary); font-size: 0.95rem; font-weight: 500; padding-bottom: 0.25rem;">occupied</span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: {{ occupancy_rate }}%"></div>
+            </div>
+        </div>
+
+        <div class="bar-stats" style="border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 1rem;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Rooms by Type</h3>
+            
+            <div class="bar-item">
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">Standard Rooms</span>
+                <span style="font-weight: 700; font-size: 0.95rem;">{{ room_stats.Standard }}</span>
+            </div>
+            <div class="bar-item">
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">Deluxe Rooms</span>
+                <span style="font-weight: 700; font-size: 0.95rem;">{{ room_stats.Deluxe }}</span>
+            </div>
+            <div class="bar-item">
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">Luxury Suites</span>
+                <span style="font-weight: 700; font-size: 0.95rem;">{{ room_stats.Suite }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

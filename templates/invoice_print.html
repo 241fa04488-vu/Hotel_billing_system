@@ -1,0 +1,194 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Receipt - {{ invoice.invoice_number }}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            padding: 2rem !important;
+            margin: 0 !important;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .invoice-receipt {
+            box-shadow: none !important;
+            border: none !important;
+            background: #ffffff !important;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="invoice-receipt">
+    <!-- Receipt Header -->
+    <div class="receipt-header">
+        <div class="brand-details">
+            <h2>AETHER LUXURY HOTELS</h2>
+            <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500; line-height: 1.4;">
+                Aether Elite Towers, Suite 800<br>
+                Tech City Central, 400013<br>
+                contact@aetherluxury.com | +91 22 8900 1200
+            </p>
+        </div>
+        <div class="receipt-meta">
+            <h3>INVOICE RECEIPT</h3>
+            <p style="font-family: var(--font-heading); font-weight: 700; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">
+                {{ invoice.invoice_number }}
+            </p>
+            <p style="color: #64748b; font-size: 0.85rem; font-weight: 500;">
+                Date: {{ invoice.created_at|date:"d M Y" }}<br>
+                Payment: {{ invoice.payment_method }}<br>
+                Status: {{ invoice.payment_status }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Client & Stay Metadata Info -->
+    <div class="info-grid">
+        <div class="info-col">
+            <h4>Billing Information</h4>
+            <p style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;">
+                {{ invoice.customer_name }}
+            </p>
+            <p style="color: #475569; font-size: 0.9rem; line-height: 1.4; font-weight: 500;">
+                {% if invoice.customer_email %}{{ invoice.customer_email }}<br>{% endif %}
+                {% if invoice.customer_phone %}{{ invoice.customer_phone }}{% endif %}
+            </p>
+        </div>
+        <div class="info-col">
+            <h4>Stay & Accommodation Details</h4>
+            <table style="width: 100%; font-size: 0.9rem; color: #475569; font-weight: 500;">
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Room Assigned:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">
+                        {% if invoice.room %}Room {{ invoice.room.room_number }} ({{ invoice.room.category }}){% else %}N/A{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Check-in:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">{{ invoice.check_in_date|date:"d M Y" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Check-out:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">{{ invoice.check_out_date|date:"d M Y" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Duration of Stay:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">{{ invoice.nights_count }} Night(s)</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Line Item Breakdown Table -->
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th style="padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">Description of Services</th>
+                <th style="padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; text-align: right; width: 180px;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Stay charges -->
+            <tr>
+                <td style="padding: 1.25rem 1rem; font-weight: 600; color: #1e293b;">
+                    Room Accommodation Base Charges<br>
+                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                        {{ invoice.nights_count }} Night(s) @ ₹{% if invoice.room %}{{ invoice.room.price_per_night }}{% else %}{{ invoice.room_charges }}{% endif %}/night
+                    </span>
+                </td>
+                <td style="padding: 1.25rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    ₹{{ invoice.room_charges|floatformat:2 }}
+                </td>
+            </tr>
+            <!-- Extra items -->
+            {% for item in items %}
+            <tr>
+                <td style="padding: 1.25rem 1rem; font-weight: 600; color: #1e293b;">
+                    {{ item.description }}
+                </td>
+                <td style="padding: 1.25rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    ₹{{ item.amount|floatformat:2 }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Financial Aggregations -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Left: Notes or Particulars -->
+        <div style="font-size: 0.8rem; color: #64748b; font-weight: 500; line-height: 1.5; padding-right: 1.5rem;">
+            <h4 style="color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Terms & Notes</h4>
+            <p>
+                All billing prices are summarized in local currency (INR). Invoices unpaid within checkout limits are subject to interest. Please preserve this receipt copy for any hospitality claims.
+            </p>
+        </div>
+        
+        <!-- Right: Totals -->
+        <div class="receipt-totals">
+            <div class="receipt-line">
+                <span>Subtotal (Room + Extras)</span>
+                <span style="color: #1e293b; font-weight: 600;">₹{{ subtotal|floatformat:2 }}</span>
+            </div>
+            {% if invoice.discount > 0 %}
+            <div class="receipt-line" style="color: #ef4444;">
+                <span>Applied Discount</span>
+                <span style="font-weight: 600;">-₹{{ invoice.discount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            <div class="receipt-line">
+                <span>Levy Tax ({{ invoice.tax_rate }}%)</span>
+                <span style="color: #1e293b; font-weight: 600;">₹{{ invoice.tax_amount|floatformat:2 }}</span>
+            </div>
+            <div class="receipt-line final">
+                <span>Grand Total</span>
+                <span>₹{{ invoice.grand_total|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Photo Section -->
+    {% if invoice.verification_photo %}
+    <div style="margin-top: 3rem; border-top: 1px dashed #cbd5e1; padding-top: 1.5rem;">
+        <h4 style="color: #475569; font-size: 0.85rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Payment Verification Photo</h4>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 0.75rem; width: fit-content; max-width: 100%;">
+            <img src="{{ invoice.verification_photo }}" alt="Verification photo" style="max-height: 220px; border-radius: 4px; display: block; border: 1px solid #cbd5e1;">
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Seal and Signature Blocks -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 5rem; padding-top: 2rem; border-top: 1px dashed #cbd5e1; font-size: 0.85rem;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2rem;">
+            <div style="border-bottom: 1px solid #94a3b8; width: 180px; height: 1px;"></div>
+            <span style="font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Customer Signature</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2rem;">
+            <div style="border-bottom: 1px solid #94a3b8; width: 180px; height: 1px;"></div>
+            <span style="font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Authorized Signatory</span>
+        </div>
+    </div>
+
+    <!-- Receipt Footer -->
+    <div class="receipt-footer">
+        <p style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.25rem;">THANK YOU FOR YOUR STAY</p>
+        <p>Hope to welcome you back at Aether Luxury Hotels soon.</p>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        setTimeout(function() {
+            window.print();
+        }, 500);
+    }
+</script>
+</body>
+</html>

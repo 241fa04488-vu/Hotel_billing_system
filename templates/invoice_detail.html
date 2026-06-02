@@ -1,0 +1,657 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Invoice {{ invoice.invoice_number }} | Aether Hotel Billing{% endblock %}
+
+{% block content %}
+<!-- Receipt Actions (Hidden in physical print) -->
+<div class="no-print" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <a href="{% url 'invoice_list' %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Back to Ledger</span>
+    </a>
+    
+    <div style="display: flex; gap: 1rem;">
+        {% if request.user.profile.role != 'Customer' and invoice.payment_status == 'Pending' %}
+        <button onclick="openDetailPaymentModal()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm-5-4h.01M12 12h.01" />
+            </svg>
+            <span>Make Payment Now</span>
+        </button>
+        {% endif %}
+        <button onclick="openPrintOtpModal()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            <span>Print Receipt</span>
+        </button>
+        <a href="{% url 'invoice_create' %}" class="btn btn-secondary">New Invoice</a>
+    </div>
+</div>
+
+<!-- Luxury Printable Invoice Sheet -->
+<div class="invoice-receipt">
+    
+    <!-- Receipt Header -->
+    <div class="receipt-header">
+        <div class="brand-details">
+            <h2>AETHER LUXURY HOTELS</h2>
+            <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500; line-height: 1.4;">
+                Aether Elite Towers, Suite 800<br>
+                Tech City Central, 400013<br>
+                contact@aetherluxury.com | +91 22 8900 1200
+            </p>
+        </div>
+        <div class="receipt-meta">
+            <h3>INVOICE RECEIPT</h3>
+            <p style="font-family: var(--font-heading); font-weight: 700; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">
+                {{ invoice.invoice_number }}
+            </p>
+            <p style="color: #64748b; font-size: 0.85rem; font-weight: 500;">
+                Date: {{ invoice.created_at|date:"d M Y" }}<br>
+                Payment: {{ invoice.payment_method }}<br>
+                Status: 
+                <span class="badge {% if invoice.payment_status == 'Paid' %}badge-success{% else %}badge-warning{% endif %}" style="font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem;">
+                    {{ invoice.payment_status }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Client & Stay Metadata Info -->
+    <div class="info-grid">
+        <div class="info-col">
+            <h4>Billing Information</h4>
+            <p style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;">
+                {{ invoice.customer_name }}
+            </p>
+            <p style="color: #475569; font-size: 0.9rem; line-height: 1.4; font-weight: 500;">
+                {% if invoice.customer_email %}{{ invoice.customer_email }}<br>{% endif %}
+                {% if invoice.customer_phone %}{{ invoice.customer_phone }}{% endif %}
+            </p>
+        </div>
+        <div class="info-col">
+            <h4>Stay & Accommodation Details</h4>
+            <table style="width: 100%; font-size: 0.9rem; color: #475569; font-weight: 500;">
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Room Assigned:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">
+                        {% if invoice.room %}Room {{ invoice.room.room_number }} ({{ invoice.room.category }}){% else %}N/A{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Check-in:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">{{ invoice.check_in_date|date:"d M Y" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Check-out:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">{{ invoice.check_out_date|date:"d M Y" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.25rem 0; border: none; font-weight: 600; color: #0f172a;">Duration of Stay:</td>
+                    <td style="padding: 0.25rem 0; border: none; text-align: right;">{{ invoice.nights_count }} Night(s)</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Line Item Breakdown Table -->
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th style="padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">Description of Services</th>
+                <th style="padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; text-align: right; width: 180px;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Stay charges -->
+            <tr>
+                <td style="padding: 1.25rem 1rem; font-weight: 600; color: #1e293b;">
+                    Room Accommodation Base Charges<br>
+                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                        {{ invoice.nights_count }} Night(s) @ ₹{% if invoice.room %}{{ invoice.room.price_per_night }}{% else %}{{ invoice.room_charges }}{% endif %}/night
+                    </span>
+                </td>
+                <td style="padding: 1.25rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    ₹{{ invoice.room_charges|floatformat:2 }}
+                </td>
+            </tr>
+            <!-- Extra items -->
+            {% for item in items %}
+            <tr>
+                <td style="padding: 1.25rem 1rem; font-weight: 600; color: #1e293b;">
+                    {{ item.description }}
+                </td>
+                <td style="padding: 1.25rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    ₹{{ item.amount|floatformat:2 }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Financial Aggregations -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Left: Notes or Payment particulars -->
+        <div style="font-size: 0.8rem; color: #64748b; font-weight: 500; line-height: 1.5; padding-right: 1.5rem;">
+            <h4 style="color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Terms & Notes</h4>
+            <p>
+                All billing prices are summarized in local currency (INR). Invoices unpaid within checkout limits are subject to interest. Please preserve this receipt copy for any hospitality claims.
+            </p>
+        </div>
+        
+        <!-- Right: Totals -->
+        <div class="receipt-totals">
+            <div class="receipt-line">
+                <span>Subtotal (Room + Extras)</span>
+                <span style="color: #1e293b; font-weight: 600;">₹{{ subtotal|floatformat:2 }}</span>
+            </div>
+            {% if invoice.discount > 0 %}
+            <div class="receipt-line" style="color: #ef4444;">
+                <span>Applied Discount</span>
+                <span style="font-weight: 600;">-₹{{ invoice.discount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            <div class="receipt-line">
+                <span>Levy Tax ({{ invoice.tax_rate }}%)</span>
+                <span style="color: #1e293b; font-weight: 600;">₹{{ invoice.tax_amount|floatformat:2 }}</span>
+            </div>
+            <div class="receipt-line final">
+                <span>Grand Total</span>
+                <span>₹{{ invoice.grand_total|floatformat:2 }}</span>
+            </div>
+    </div>
+
+    <!-- Verification Photo Section -->
+    {% if invoice.verification_photo %}
+    <div style="margin-top: 3rem; border-top: 1px dashed #cbd5e1; padding-top: 1.5rem;">
+        <h4 style="color: #475569; font-size: 0.85rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Payment Verification Photo</h4>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 0.75rem; width: fit-content; max-width: 100%;">
+            <img src="{{ invoice.verification_photo }}" alt="Verification photo" style="max-height: 220px; border-radius: 4px; display: block; border: 1px solid #cbd5e1;">
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Seal and Signature Blocks -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 5rem; padding-top: 2rem; border-top: 1px dashed #cbd5e1; font-size: 0.85rem;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2rem;">
+            <div style="border-bottom: 1px solid #94a3b8; width: 180px; height: 1px;"></div>
+            <span style="font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Customer Signature</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2rem;">
+            <div style="border-bottom: 1px solid #94a3b8; width: 180px; height: 1px;"></div>
+            <span style="font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Authorized Signatory</span>
+        </div>
+    </div>
+
+    <!-- Receipt Footer -->
+    <div class="receipt-footer">
+        <p style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.25rem;">THANK YOU FOR YOUR STAY</p>
+        <p>Hope to welcome you back at Aether Luxury Hotels soon.</p>
+    </div>
+
+</div>
+
+<!-- Settle Invoice Payment Modal -->
+<div class="modal" id="payment-modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <button type="button" onclick="closeModal('payment-modal')" class="close-modal">&times;</button>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; font-family: var(--font-heading);">Settle Bill Payment</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Settle staying billing statement <strong>{{ invoice.invoice_number }}</strong> of amount <strong>₹{{ invoice.grand_total|floatformat:2 }}</strong>.</p>
+        
+        <form id="payment-settle-form" action="{% url 'invoice_pay' invoice.pk %}" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="payment_method_select">Payment Method</label>
+                <select id="payment_method_select" name="payment_method" onchange="togglePaymentFields(this.value)" required>
+                    <option value="UPI">Unified Payments Interface (UPI)</option>
+                    <option value="Card">Credit / Debit Card</option>
+                    <option value="Net Banking">Net Banking</option>
+                    <option value="Cash">Cash Settlement</option>
+                </select>
+            </div>
+            
+            <!-- UPI QR Container -->
+            <div id="upi-details" class="payment-fields-group">
+                <div style="background-color: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center;">
+                    <!-- Static PhonePe QR code uploaded by the user -->
+                    <div style="background-color: #ffffff; padding: 1rem; border-radius: 8px; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
+                        <img src="{% static 'images/phonepe_qr.jpg' %}" alt="PhonePe QR Code" style="width: 120px; height: 120px; border: none; display: block;">
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 0.9rem;">Scan & Pay via UPI App</strong>
+                        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.15rem;">Merchant VPA: <code>pay@aetherluxury</code></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Card details Container -->
+            <div id="card-details" class="payment-fields-group" style="display: none;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Cardholder Name</label>
+                    <input type="text" name="card_name" placeholder="John Doe">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Card Number</label>
+                    <input type="text" name="card_number" placeholder="4111 2222 3333 4444" minlength="16" maxlength="19">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Expiry Date</label>
+                        <input type="text" name="card_expiry" placeholder="MM/YY" maxlength="5">
+                    </div>
+                    <div class="form-group">
+                        <label>CVV / CVC</label>
+                        <input type="password" name="card_cvv" placeholder="•••" maxlength="3">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Net Banking details Container -->
+            <div id="netbanking-details" class="payment-fields-group" style="display: none;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Select Your Bank</label>
+                    <select name="nb_bank_name">
+                        <option value="State Bank of India">State Bank of India</option>
+                        <option value="HDFC Bank">HDFC Bank</option>
+                        <option value="ICICI Bank">ICICI Bank</option>
+                        <option value="Axis Bank">Axis Bank</option>
+                        <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Online Banking Account Number</label>
+                    <input type="text" name="nb_account" placeholder="e.g. 30192837465">
+                </div>
+                <div class="form-group">
+                    <label>Bank IFSC Code</label>
+                    <input type="text" name="nb_ifsc" placeholder="SBIN0003019">
+                </div>
+            </div>
+            
+            <!-- Cash Details Container -->
+            <div id="cash-details" class="payment-fields-group" style="display: none;">
+                <div style="background-color: var(--success-bg); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-sm); padding: 1.25rem; font-size: 0.85rem; color: var(--success); display: flex; gap: 0.75rem;">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="flex-shrink: 0; margin-top: 0.1rem;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <strong>Physical Cash Settlement</strong><br>
+                        Verify that cash has been physically received at the lobby desk. The ledger transitions this invoice immediately to Paid status.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Verification Camera Block -->
+            <div id="verification-camera-group" class="form-group" style="display: none; margin-top: 1.5rem; flex-direction: column; gap: 0.75rem; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 1.25rem;">
+                <label style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--primary);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Verification Camera Capture *</span>
+                </label>
+                
+                <div style="position: relative; width: 100%; max-width: 320px; height: 240px; border-radius: 4px; overflow: hidden; background: #0a0a0a; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; margin: 0.25rem auto;">
+                    <video id="webcam-feed" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
+                    <img id="webcam-preview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    <div id="camera-error-msg" style="display: none; position: absolute; padding: 1rem; color: #ef4444; font-size: 0.8rem; text-align: center; font-weight: 600; line-height: 1.4;">
+                        No active webcam stream. A custom verified stamp will be auto-generated upon capture.
+                    </div>
+                </div>
+                
+                <canvas id="webcam-canvas" width="640" height="480" style="display: none;"></canvas>
+                <input type="hidden" name="verification_photo" id="webcam-data-input">
+                
+                <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 0.25rem;">
+                    <button type="button" id="btn-capture-photo" onclick="capturePhoto()" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        </svg>
+                        <span>Take Verification Snapshot</span>
+                    </button>
+                    <button type="button" id="btn-retake-photo" onclick="retakePhoto()" class="btn btn-secondary" style="display: none; padding: 0.5rem 1rem; font-size: 0.8rem;">
+                        Retake Photo
+                    </button>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, var(--primary), var(--secondary));">Confirm Settle</button>
+                <button type="button" onclick="closeModal('payment-modal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- OTP Verification Modal for Printing Receipt -->
+<div id="print-otp-modal" class="modal-overlay no-print" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 2000; animation: fadeIn 0.3s ease-out;">
+    <div class="glass-card" style="width: 100%; max-width: 420px; padding: 2.25rem; border: 1px solid var(--primary); border-radius: var(--radius-lg); background: rgba(30, 41, 59, 0.95); text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+        
+        <div style="display: inline-flex; padding: 0.85rem; border-radius: 50%; background: rgba(197, 168, 128, 0.1); border: 1px solid var(--primary); margin-bottom: 1.25rem; color: var(--primary);">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+        
+        <h3 style="font-family: var(--font-heading); color: #ffffff; font-size: 1.35rem; margin-bottom: 0.5rem;">Verify to Print Receipt</h3>
+        <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            A secure One-Time Password (OTP) has been sent to the guest's email. Enter it below to unlock the printable receipt.
+        </p>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <input type="text" id="print-otp-input" placeholder="000000" maxlength="6" style="width: 100%; max-width: 220px; text-align: center; font-size: 1.75rem; font-weight: bold; letter-spacing: 0.35rem; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--primary); background: rgba(15, 23, 42, 0.6); color: #ffffff; font-family: monospace; outline: none;" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+            <div id="print-otp-error" style="display: none; color: #ef4444; font-size: 0.8rem; margin-top: 0.5rem; font-weight: 600;"></div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 1.75rem;">
+            <button type="button" onclick="verifyAndPrintReceipt()" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, var(--primary), var(--secondary)); font-size: 0.9rem; padding: 0.65rem;">Verify & Print</button>
+            <button type="button" onclick="document.getElementById('print-otp-modal').style.display='none';" class="btn btn-secondary" style="flex: 1; font-size: 0.9rem; padding: 0.65rem;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let webcamStream = null;
+    let cameraActive = false;
+
+    async function startWebcam() {
+        const video = document.getElementById('webcam-feed');
+        const errorMsg = document.getElementById('camera-error-msg');
+        
+        if (webcamStream) {
+            stopWebcam();
+        }
+        
+        try {
+            webcamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+            video.srcObject = webcamStream;
+            video.style.display = 'block';
+            errorMsg.style.display = 'none';
+            cameraActive = true;
+        } catch (err) {
+            console.warn("Could not start camera, using simulated photo verification fallback: ", err);
+            video.style.display = 'none';
+            errorMsg.style.display = 'block';
+            cameraActive = false;
+        }
+    }
+
+    function stopWebcam() {
+        const video = document.getElementById('webcam-feed');
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream = null;
+        }
+        if (video) {
+            video.srcObject = null;
+        }
+        cameraActive = false;
+    }
+
+    function drawSimulatedStamp(canvas, ctx) {
+        if (!canvas || !ctx) return;
+        try {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+            
+            ctx.strokeStyle = '#c5a880';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
+            
+            ctx.font = 'bold 28px Georgia, serif';
+            ctx.fillStyle = '#c5a880';
+            ctx.textAlign = 'center';
+            ctx.fillText('AETHER LUXURY HOTELS', canvas.width / 2, 130);
+            
+            ctx.font = 'bold 36px Georgia, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('PAYMENT VERIFIED', canvas.width / 2, 220);
+            
+            ctx.font = '16px monospace';
+            ctx.fillStyle = '#94a3b8';
+            const timestamp = new Date().toLocaleString();
+            ctx.fillText(`Timestamp: ${timestamp}`, canvas.width / 2, 280);
+            ctx.fillText(`Invoice ID: {{ invoice.invoice_number }}`, canvas.width / 2, 310);
+            
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, 380, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+            
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2 - 15, 380);
+            ctx.lineTo(canvas.width / 2 - 3, 392);
+            ctx.lineTo(canvas.width / 2 + 18, 368);
+            ctx.stroke();
+        } catch (e) {
+            console.error("Error drawing simulated stamp: ", e);
+        }
+    }
+
+    function capturePhoto() {
+        const video = document.getElementById('webcam-feed');
+        const preview = document.getElementById('webcam-preview');
+        const canvas = document.getElementById('webcam-canvas');
+        const input = document.getElementById('webcam-data-input');
+        const btnCapture = document.getElementById('btn-capture-photo');
+        const btnRetake = document.getElementById('btn-retake-photo');
+        
+        if (!canvas) {
+            console.warn("webcam-canvas element not found on page.");
+            if (input) input.value = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.warn("2D context not available on canvas.");
+            if (input) input.value = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            return;
+        }
+        
+        try {
+            if (cameraActive && video && video.readyState === 4) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            } else {
+                drawSimulatedStamp(canvas, ctx);
+            }
+        } catch (err) {
+            console.error("Camera snapshot capture failed, trying fallback: ", err);
+            try {
+                drawSimulatedStamp(canvas, ctx);
+            } catch (innerErr) {
+                console.error("Critical fallback stamp drawing failed: ", innerErr);
+            }
+        }
+        
+        let dataUrl = "";
+        try {
+            dataUrl = canvas.toDataURL('image/jpeg');
+        } catch (err) {
+            console.error("Failed to serialize canvas to base64 DataURL: ", err);
+            dataUrl = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        }
+        
+        if (input) {
+            input.value = dataUrl;
+        }
+        
+        if (video) video.style.display = 'none';
+        if (preview && dataUrl) {
+            preview.src = dataUrl;
+            preview.style.display = 'block';
+        }
+        
+        if (btnCapture) btnCapture.style.display = 'none';
+        if (btnRetake) btnRetake.style.display = 'inline-flex';
+    }
+
+    function retakePhoto() {
+        const video = document.getElementById('webcam-feed');
+        const preview = document.getElementById('webcam-preview');
+        const input = document.getElementById('webcam-data-input');
+        const btnCapture = document.getElementById('btn-capture-photo');
+        const btnRetake = document.getElementById('btn-retake-photo');
+        
+        input.value = '';
+        preview.style.display = 'none';
+        
+        if (cameraActive) {
+            video.style.display = 'block';
+        }
+        
+        btnCapture.style.display = 'inline-flex';
+        btnRetake.style.display = 'none';
+    }
+
+    function openDetailPaymentModal() {
+        document.getElementById('payment-modal').style.display = 'flex';
+        togglePaymentFields('UPI');
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        if (modalId === 'payment-modal') {
+            stopWebcam();
+        }
+    }
+    
+    function togglePaymentFields(value) {
+        // Hide all fields first
+        document.querySelectorAll('.payment-fields-group').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.payment-fields-group input').forEach(el => el.removeAttribute('required'));
+        
+        const cameraGroup = document.getElementById('verification-camera-group');
+        const cameraInput = document.getElementById('webcam-data-input');
+        
+        if (value === 'UPI' || value === 'Cash') {
+            cameraGroup.style.display = 'flex';
+            startWebcam();
+            retakePhoto(); // reset state
+        } else {
+            cameraGroup.style.display = 'none';
+            stopWebcam();
+        }
+        
+        if (value === 'UPI') {
+            document.getElementById('upi-details').style.display = 'block';
+        } else if (value === 'Card') {
+            document.getElementById('card-details').style.display = 'block';
+            document.querySelectorAll('#card-details input').forEach(el => el.setAttribute('required', 'true'));
+        } else if (value === 'Net Banking') {
+            document.getElementById('netbanking-details').style.display = 'block';
+            document.querySelectorAll('#netbanking-details input').forEach(el => el.setAttribute('required', 'true'));
+        } else if (value === 'Cash') {
+            document.getElementById('cash-details').style.display = 'block';
+        }
+    }
+
+    // Ensure form always captures photo if empty during checkout
+    document.addEventListener("DOMContentLoaded", function() {
+        const formSettle = document.getElementById('payment-settle-form');
+        if (formSettle) {
+            let isSubmitting = false;
+            formSettle.addEventListener('submit', function(e) {
+                if (isSubmitting) return;
+                
+                const paymentMethod = document.getElementById('payment_method_select').value;
+                const photoInput = document.getElementById('webcam-data-input');
+                if (paymentMethod === 'UPI' || paymentMethod === 'Cash') {
+                    if (!photoInput.value) {
+                        e.preventDefault(); // Stop immediate synchronous submission
+                        isSubmitting = true;
+                        capturePhoto();     // Capture photo (camera frame or fallback stamp)
+                        setTimeout(function() {
+                            formSettle.submit(); // Submit programmatically in the next event tick
+                        }, 50);
+                    }
+                }
+            });
+        }
+    });
+
+    // AJAX Print OTP Helpers
+    function openPrintOtpModal() {
+        document.getElementById('print-otp-modal').style.display = 'flex';
+        document.getElementById('print-otp-error').style.display = 'none';
+        document.getElementById('print-otp-input').value = '';
+        
+        fetch("{% url 'invoice_send_print_otp' invoice.pk %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log("OTP code successfully dispatched.");
+            } else {
+                alert("Error sending verification OTP: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error("AJAX dispatch error: ", err);
+        });
+    }
+
+    function verifyAndPrintReceipt() {
+        const otpInput = document.getElementById('print-otp-input').value.trim();
+        if (!otpInput) {
+            alert("Please enter the 6-digit OTP verification code.");
+            return;
+        }
+        
+        // Browser Pop-up Blocker Bypass:
+        // Open the blank tab IMMEDIATELY in response to the user's click gesture
+        const printWindow = window.open("", "_blank");
+        if (printWindow) {
+            printWindow.document.write("<p style='font-family: sans-serif; text-align: center; margin-top: 100px; color: #475569;'>Authorizing print request... Please wait.</p>");
+        }
+        
+        fetch("{% url 'invoice_verify_print_otp' invoice.pk %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "otp_code=" + encodeURIComponent(otpInput)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('print-otp-modal').style.display = 'none';
+                // Redirect the already-opened printWindow to the printable view
+                if (printWindow) {
+                    printWindow.location.href = "{% url 'invoice_print_view' invoice.pk %}";
+                }
+            } else {
+                // Close the tab since authorization failed
+                if (printWindow) {
+                    printWindow.close();
+                }
+                document.getElementById('print-otp-error').innerText = data.message;
+                document.getElementById('print-otp-error').style.display = 'block';
+            }
+        })
+        .catch(err => {
+            console.error("AJAX verification error: ", err);
+            if (printWindow) {
+                printWindow.close();
+            }
+            alert("Print verification failed.");
+        });
+    }
+</script>
+{% endblock %}

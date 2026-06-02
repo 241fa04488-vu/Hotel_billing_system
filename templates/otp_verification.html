@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Verify Booking - Aether Luxury Hotels{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 4rem auto; padding: 2rem;">
+    <div class="glass-card" style="padding: 2.5rem; text-align: center; border: 1px solid var(--primary); border-radius: var(--radius-lg); position: relative; overflow: hidden; background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(16px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+        
+        <!-- Luxury Accent Border -->
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--primary), transparent);"></div>
+        
+        <!-- Header -->
+        <div style="margin-bottom: 2rem;">
+            <div style="display: inline-flex; padding: 1rem; border-radius: 50%; background: rgba(197, 168, 128, 0.1); border: 1px solid var(--primary); margin-bottom: 1rem; color: var(--primary);">
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2 style="font-family: var(--font-heading); color: #f8fafc; font-size: 1.75rem; margin-bottom: 0.5rem; letter-spacing: 0.03em;">Verify Your Email</h2>
+            <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">
+                We have dispatched a One-Time Password (OTP) code to your registered email address and audit inbox. Please enter the 6-digit code below to finalize your booking.
+            </p>
+        </div>
+
+        <!-- Verification Form -->
+        <form method="POST" action="{% url 'customer_verify_otp' %}" style="display: flex; flex-direction: column; gap: 1.5rem; align-items: center;">
+            {% csrf_token %}
+            
+            <!-- OTP Input -->
+            <div style="width: 100%; max-width: 320px;">
+                <input type="text" name="otp_code" placeholder="0 0 0 0 0 0" maxlength="6" required autocomplete="off"
+                       style="width: 100%; text-align: center; font-size: 2rem; font-weight: bold; letter-spacing: 0.5rem; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--primary); background: rgba(15, 23, 42, 0.6); color: #f8fafc; font-family: monospace; outline: none; transition: border-color 0.3s;"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary" style="width: 100%; max-width: 320px; font-size: 1rem; padding: 0.85rem; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <span>Verify & Confirm Booking</span>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </form>
+
+        <!-- Resend and Timer -->
+        <div style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; align-items: center;">
+            <div style="font-size: 0.85rem; color: #94a3b8;">
+                Code expires in: <strong id="timer-display" style="color: #ef4444;">05:00</strong>
+            </div>
+            
+            <div style="font-size: 0.85rem; color: #64748b;">
+                Didn't receive the email? 
+                <a href="{% url 'customer_verify_otp' %}?action=resend" id="resend-link" style="color: var(--primary); font-weight: 600; text-decoration: none; pointer-events: none; opacity: 0.5; transition: opacity 0.3s;">Resend OTP</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Countdown Timer logic (5 minutes)
+    let duration = 300; // 300 seconds
+    const timerDisplay = document.getElementById('timer-display');
+    const resendLink = document.getElementById('resend-link');
+
+    const interval = setInterval(() => {
+        let minutes = Math.floor(duration / 60);
+        let seconds = duration % 60;
+        
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        
+        timerDisplay.textContent = `${minutes}:${seconds}`;
+        
+        if (duration <= 0) {
+            clearInterval(interval);
+            timerDisplay.textContent = "Expired";
+            timerDisplay.style.color = "#ef4444";
+            resendLink.style.pointerEvents = "auto";
+            resendLink.style.opacity = "1";
+        }
+        duration--;
+    }, 1000);
+</script>
+{% endblock %}

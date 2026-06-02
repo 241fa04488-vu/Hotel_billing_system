@@ -1,0 +1,741 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Guest Portal | Aether Luxury Hotels{% endblock %}
+
+{% block content %}
+<!-- Portal Header -->
+<div class="portal-header" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+    <div>
+        <h1 style="font-size: 2.25rem; font-weight: 800; animation: fadeIn 0.4s ease-out;">Aether Guest Console</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Access stay statements, request room bookings, and order premium in-room dining.</p>
+    </div>
+    
+    <div style="font-size: 0.9rem; text-align: right; color: var(--text-secondary); line-height: 1.5;">
+        <strong style="color: var(--text-primary);">Account Guest:</strong> {{ request.user.first_name }} {{ request.user.last_name }}<br>
+        <strong style="color: var(--text-primary);">Role Clearance:</strong> Customer
+    </div>
+</div>
+
+<!-- Premium Tabs Navigation -->
+<div style="display: flex; gap: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2.5rem; padding-bottom: 0.1rem;" class="no-print">
+    <button class="tab-btn active" onclick="switchTab('invoices-section', this)" style="background: none; border: none; font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; padding: 0.75rem 1.5rem; color: var(--primary); border-bottom: 3px solid var(--primary); cursor: pointer; transition: var(--transition);">
+        My Statements
+    </button>
+    <button class="tab-btn" onclick="switchTab('rooms-section', this)" style="background: none; border: none; font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; padding: 0.75rem 1.5rem; color: var(--text-secondary); border-bottom: 3px solid transparent; cursor: pointer; transition: var(--transition);">
+        Book Room
+    </button>
+    <button class="tab-btn" onclick="switchTab('dining-section', this)" style="background: none; border: none; font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; padding: 0.75rem 1.5rem; color: var(--text-secondary); border-bottom: 3px solid transparent; cursor: pointer; transition: var(--transition);">
+        In-Room Dining
+    </button>
+    <button class="tab-btn" onclick="switchTab('profile-section', this)" style="background: none; border: none; font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; padding: 0.75rem 1.5rem; color: var(--text-secondary); border-bottom: 3px solid transparent; cursor: pointer; transition: var(--transition);">
+        My Profile
+    </button>
+</div>
+
+<!-- ========================================== -->
+<!-- SECTION 1: INVOICES & STATEMENTS -->
+<!-- ========================================== -->
+<div id="invoices-section" class="tab-content" style="display: block;">
+    
+    <!-- Stay Invoices -->
+    <div style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 1rem;">Stay Invoices & Receipts</h2>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            {% for invoice in invoices %}
+            <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; padding: 1.5rem 2rem;">
+                <div style="display: flex; gap: 1.5rem; align-items: center;">
+                    <div style="width: 48px; height: 48px; border-radius: var(--radius-sm); background-color: var(--primary-glow); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.15rem;">Invoice {{ invoice.invoice_number }}</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
+                            Room {{ invoice.room.room_number }} ({{ invoice.room.category }}) &bull; Stay duration: {{ invoice.nights_count }} Nights
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 2rem;">
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total</span>
+                        <div style="font-size: 1.2rem; font-weight: 800;">₹{{ invoice.grand_total|floatformat:2 }}</div>
+                        <span class="badge {% if invoice.payment_status == 'Paid' %}badge-success{% else %}badge-warning{% endif %}" style="font-size: 0.65rem; padding: 0.15rem 0.5rem; margin-top: 0.15rem; display: inline-block;">{{ invoice.payment_status }}</span>
+                    </div>
+                    {% if invoice.payment_status == 'Pending' %}
+                    <button type="button" onclick="openPortalPaymentModal('{{ invoice.pk }}', '{{ invoice.invoice_number }}', '{{ invoice.grand_total }}')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: none;">
+                        Pay Bill
+                    </button>
+                    {% endif %}
+                    
+                    <form action="{% url 'customer_cancel_booking' invoice.pk %}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to clear this booking statement? The room will be released immediately.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: var(--transition);" onmouseover="this.style.background='rgba(239, 68, 68, 0.18)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+                            Clear Booking
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'invoice_detail' invoice.pk %}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">View</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="glass-card" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                No statements registered to your profile.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Booking Requests History -->
+    <div style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 1rem;">Your Booking Requests</h2>
+        <div class="glass-card" style="padding: 1rem;">
+            <div class="table-wrapper" style="margin-top: 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Requested Date</th>
+                            <th>Room Info</th>
+                            <th>Stay Dates</th>
+                            <th>Stay Duration</th>
+                            <th>Guests</th>
+                            <th>Estimated Cost</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in booking_requests %}
+                        <tr {% if req.status == 'Rejected' %}style="background-color: rgba(239, 68, 68, 0.03); border-left: 3px solid var(--danger);"{% endif %}>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ req.created_at|date:"M d, Y H:i" }}</td>
+                            <td style="font-weight: 600;">Room {{ req.room.room_number }} ({{ req.room.category }})</td>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ req.check_in_date|date:"M d" }} - {{ req.check_out_date|date:"M d, Y" }}</td>
+                            <td>{{ req.nights_count }} Nights</td>
+                            <td>{{ req.num_guests }} Guest{{ req.num_guests|pluralize }}</td>
+                            <td style="font-weight: 700; color: var(--primary);">₹{{ req.estimated_total|floatformat:2 }}</td>
+                            <td>
+                                {% if req.status == 'Approved' %}
+                                <span class="badge badge-success">Approved</span>
+                                {% elif req.status == 'Rejected' %}
+                                <span class="badge badge-danger" title="{{ req.rejection_reason }}">Rejected</span>
+                                <div style="font-size: 0.75rem; color: var(--danger); font-weight: 600; margin-top: 0.25rem; max-width: 240px; line-height: 1.3;">
+                                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: inline; vertical-align: middle; margin-right: 2px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    {{ req.rejection_reason }}
+                                </div>
+                                {% else %}
+                                <span class="badge badge-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.status == 'Pending' or req.status == 'Approved' %}
+                                <form action="{% url 'customer_cancel_request' req.pk %}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel this booking request? This will release the room.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: var(--transition);" onmouseover="this.style.background='rgba(239, 68, 68, 0.18)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+                                        Cancel
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No Action</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                No recent booking requests.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dining Orders History -->
+    <div>
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 1rem;">In-Room Dining Orders</h2>
+        <div class="glass-card" style="padding: 1rem;">
+            <div class="table-wrapper" style="margin-top: 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order Time</th>
+                            <th>Dish Details</th>
+                            <th>Room Delivery</th>
+                            <th>Price per unit</th>
+                            <th>Quantity</th>
+                            <th>Subtotal</th>
+                            <th>Delivery Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in food_orders %}
+                        <tr>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ order.created_at|date:"M d, Y H:i" }}</td>
+                            <td style="font-weight: 600;">{{ order.item_name }}</td>
+                            <td>Room {{ order.room_number }}</td>
+                            <td>₹{{ order.price|floatformat:2 }}</td>
+                            <td style="font-weight: 700;">x{{ order.quantity }}</td>
+                            <td style="font-weight: 700; color: var(--primary);">₹{{ order.total_price|floatformat:2 }}</td>
+                            <td>
+                                {% if order.status == 'Delivered' %}
+                                <span class="badge badge-success">Delivered</span>
+                                {% else %}
+                                <span class="badge badge-warning">Preparing</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                No dining requests ordered yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ========================================== -->
+<!-- SECTION 2: ACCOMMODATIONS & ROOM BOOKINGS -->
+<!-- ========================================== -->
+<div id="rooms-section" class="tab-content" style="display: none;">
+    <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.25rem;">Accommodation Suites</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Review vacant chambers and submit a request to secure your booking instantly.</p>
+    </div>
+    
+    <!-- Guidelines Block -->
+    <div class="glass-card" style="border-left: 4px solid var(--primary); padding: 1.25rem 2rem; margin-bottom: 2rem; font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 1rem; align-items: flex-start;">
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--primary); flex-shrink: 0; margin-top: 0.1rem;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem; font-size: 0.9rem;">Official Chamber Booking Rules & Validation Parameters:</strong>
+            1. **Check-In Date**: Must be today or a future date. (Past stays are immediately rejected).<br>
+            2. **Stay Duration**: Cannot exceed the maximum regulatory limit of **30 nights**.<br>
+            3. **Chamber Vacancy**: The selected room must be fully vacant (**Vacant**).<br>
+            4. **Single Active Request**: Guests cannot file a request if they have another **Pending** request active in the system.<br>
+            5. **Capacity Limits**: Guest count must fit the room tier: **Standard** (max 2), **Deluxe** (max 3), **Suite** (max 5).<br>
+            6. **Date Overlaps**: Requested dates must not overlap with any other guest's already **Approved** reservation.<br>
+            7. **Profile Verification**: A valid **phone number** is required on your profile. (Update it under the *My Profile* tab).
+        </div>
+    </div>
+
+    <div class="room-grid">
+        {% for room in rooms %}
+        <div class="glass-card room-card" style="animation: fadeInUp 0.4s ease-out;">
+            <div class="room-header">
+                <div>
+                    <a href="#" onclick="openRoomDetailsModal('{{ room.room_number }}', '{{ room.category }}', '{{ room.price_per_night }}', {% if room.status == 'Available' %}true{% else %}false{% endif %}, '', '{{ room.pk }}'); return false;" class="room-number-link" title="Click to view room details & photos" style="color: inherit; text-decoration: none; border-bottom: 2px dashed var(--primary); cursor: pointer; display: inline-block; transition: all 0.2s ease;">
+                        <span class="room-number" style="font-size: 1.4rem;">Chamber {{ room.room_number }}</span>
+                    </a>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; margin-top: 0.15rem;">{{ room.category }} Tier</div>
+                </div>
+                
+                {% if room.status == 'Available' %}
+                <span class="badge badge-success">Vacant</span>
+                {% else %}
+                <span class="badge badge-danger">Reserved</span>
+                {% endif %}
+            </div>
+            
+            <div style="margin: 1.5rem 0; font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--success);">&bull;</span> King-sized Premium Bedding</div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--success);">&bull;</span> Smart Entertainment LED console</div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--success);">&bull;</span> High-speed Complimentary Wi-Fi</div>
+            </div>
+            
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Base Rate</div>
+                    <div class="room-price" style="font-size: 1.2rem; color: var(--primary);">₹{{ room.price_per_night }}<span>/night</span></div>
+                </div>
+                
+                {% if room.status == 'Available' %}
+                <button type="button" onclick="openBookingModal('{{ room.pk }}', '{{ room.room_number }}', '{{ room.price_per_night }}')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    Book
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; cursor: not-allowed; opacity: 0.5;" disabled>
+                    Booked
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="glass-card" style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--text-secondary);">
+            No rooms inventoried in the database ledger.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- SECTION 3: CULINARY DINING SELECTIONS -->
+<!-- ========================================== -->
+<div id="dining-section" class="tab-content" style="display: none;">
+    <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.25rem;">In-Room Culinary Service</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Order from our fine dining kitchen delivered straight to your chamber room door.</p>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+        {% for dish in food_items %}
+        <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border-color: rgba(255,255,255,0.06); animation: fadeInUp 0.4s ease-out;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">{{ dish.name }}</h3>
+                    <span class="badge {{ dish.badge }}" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;">{{ dish.category }}</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                    {{ dish.desc }}
+                </p>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+                <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary); font-family: var(--font-heading);">
+                    ₹{{ dish.price|floatformat:2 }}
+                </div>
+                
+                <button type="button" onclick="openFoodModal('{{ dish.name }}', '{{ dish.price }}')" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Order Now</span>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- SECTION 4: GUEST PROFILE MANAGEMENT -->
+<!-- ========================================== -->
+<div id="profile-section" class="tab-content" style="display: none;">
+    <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.25rem;">My Contact Profile</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Maintain your guest credentials and phone verification parameters.</p>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: flex-start; max-width: 900px; flex-wrap: wrap;">
+        <!-- Profile Card -->
+        <div class="glass-card" style="padding: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem; border-color: rgba(255,255,255,0.06); animation: fadeInUp 0.4s ease-out;">
+            <div style="display: flex; gap: 1.25rem; align-items: center;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #ffffff; flex-shrink: 0;">
+                    {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
+                </div>
+                <div>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary);">
+                        {{ request.user.first_name }} {{ request.user.last_name }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">Member Account: @{{ request.user.username }}</p>
+                </div>
+            </div>
+            
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <span style="color: var(--text-secondary);">Email Address:</span>
+                    <strong style="color: var(--text-primary);">{{ request.user.email|default:"Not set" }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <span style="color: var(--text-secondary);">Contact Number:</span>
+                    {% if request.user.profile.phone %}
+                    <strong style="color: var(--success);">{{ request.user.profile.phone }}</strong>
+                    {% else %}
+                    <strong style="color: var(--danger); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.25rem;">
+                        <span style="display:inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: var(--danger);"></span>
+                        Verification Missing
+                    </strong>
+                    {% endif %}
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <span style="color: var(--text-secondary);">Clearance Role:</span>
+                    <strong style="color: var(--primary);">{{ request.user.profile.role }}</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Form -->
+        <div class="glass-card" style="padding: 2.5rem; animation: fadeInUp 0.4s ease-out; animation-delay: 0.1s;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem; font-family: var(--font-heading);">Update Guest Parameters</h3>
+            <form action="{% url 'customer_portal' %}" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_profile">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="profile-first-name">First Name *</label>
+                        <input type="text" id="profile-first-name" name="first_name" value="{{ request.user.first_name }}" placeholder="First name" required pattern="[A-Za-z\s\-]{2,30}" title="First name must contain only letters, spaces, or hyphens, and be between 2 and 30 characters long.">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-last-name">Last Name *</label>
+                        <input type="text" id="profile-last-name" name="last_name" value="{{ request.user.last_name }}" placeholder="Last name" required pattern="[A-Za-z\s\-]{2,30}" title="Last name must contain only letters, spaces, or hyphens, and be between 2 and 30 characters long.">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-email">Email Address *</label>
+                    <input type="email" id="profile-email" name="email" value="{{ request.user.email }}" placeholder="guest@example.com" required pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Please enter a valid email address containing '@' and a domain (e.g. name@domain.com)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-phone">Contact Phone *</label>
+                    <input type="tel" id="profile-phone" name="phone" value="{{ request.user.profile.phone|default:'' }}" placeholder="e.g. 9876543210" required pattern="[0-9]{10}" maxlength="10" minlength="10" title="Please enter exactly 10 digits phone number (numeric only)">
+                    <small style="color: var(--text-muted); font-size: 0.75rem;">Required for staying reservation confirmation (exactly 10 digits).</small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem; width: 100%;">
+                    Save Updates
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- POPUP MODALS SECTION -->
+<!-- ========================================== -->
+
+<!-- Modal 1: Booking Request Dialog -->
+<div class="modal" id="booking-modal">
+    <div class="modal-content">
+        <button type="button" onclick="closeModal('booking-modal')" class="close-modal">&times;</button>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem; font-family: var(--font-heading);">Chamber Stay Reservation</h2>
+        
+        <form action="{% url 'customer_book_room' %}" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            {% csrf_token %}
+            <input type="hidden" id="modal-room-id" name="room">
+            
+            <div class="form-group">
+                <label>Assigned Chamber</label>
+                <input type="text" id="modal-room-display" readonly style="background-color: var(--bg-secondary); border-color: var(--border-color);">
+            </div>
+            
+            <div class="form-group">
+                <label>Rate per Night</label>
+                <input type="text" id="modal-room-price" readonly style="background-color: var(--bg-secondary); border-color: var(--border-color);">
+            </div>
+            
+            <div class="form-group">
+                <label for="modal-check-in">Check-in Date *</label>
+                <input type="date" id="modal-check-in" name="check_in_date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="modal-check-out">Check-out Date *</label>
+                <input type="date" id="modal-check-out" name="check_out_date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="modal-guests">Number of Guests *</label>
+                <input type="number" id="modal-guests" name="num_guests" min="1" max="10" value="1" required>
+                <small style="color: var(--text-muted); font-size: 0.75rem;">Occupancy caps: Standard 2, Deluxe 3, Suite 5.</small>
+            </div>
+            
+            <!-- Extra Chamber Surcharge Confirmation -->
+            <div id="extra-room-container" style="display: none; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 0.5rem; animation: shake 0.4s ease-in-out;">
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #f59e0b; flex-shrink: 0; margin-top: 0.15rem;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <strong style="color: #f59e0b; font-size: 0.85rem; font-family: var(--font-heading); display: block; margin-bottom: 0.25rem;">Existing Chamber Booking Detected</strong>
+                        <span style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.4; display: block; margin-bottom: 0.75rem;">
+                            You currently hold an active stay reservation. Registering an additional room will apply an **Extra Chamber Surcharge of ₹1,000.00** directly to your stay ledger.
+                        </span>
+                        <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: #ffffff; font-size: 0.85rem; font-weight: 700; user-select: none;">
+                            <input type="checkbox" id="is_extra_room" name="is_extra_room" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                            <span>Confirm Booking of Extra Room</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Submit Request</button>
+                <button type="button" onclick="closeModal('booking-modal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Dining Order Dialog -->
+<div class="modal" id="food-modal">
+    <div class="modal-content">
+        <button type="button" onclick="closeModal('food-modal')" class="close-modal">&times;</button>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem; font-family: var(--font-heading);">Room Service Order</h2>
+        
+        <form action="{% url 'customer_order_food' %}" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            {% csrf_token %}
+            <input type="hidden" id="modal-dish-name" name="item_name">
+            <input type="hidden" id="modal-dish-price" name="price">
+            
+            <div class="form-group">
+                <label>Culinary Item</label>
+                <input type="text" id="modal-dish-display" readonly style="background-color: var(--bg-secondary); border-color: var(--border-color);">
+            </div>
+            
+            <div class="form-group">
+                <label for="modal-food-room">Your Room Number *</label>
+                <input type="text" id="modal-food-room" name="room_number" placeholder="e.g. 102, 304" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="modal-food-qty">Quantity *</label>
+                <input type="number" id="modal-food-qty" name="quantity" value="1" min="1" required>
+            </div>
+            
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #10b981, #059669); box-shadow: none;">Deliver Order</button>
+                <button type="button" onclick="closeModal('food-modal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Portal Settle Invoice Payment Modal -->
+<div class="modal" id="portal-payment-modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <button type="button" onclick="closeModal('portal-payment-modal')" class="close-modal">&times;</button>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; font-family: var(--font-heading);">Settle Bill Payment</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Settle staying billing statement <strong id="portal-modal-inv-num"></strong> of amount <strong style="color: var(--primary);">₹<span id="portal-modal-amount"></span></strong>.</p>
+        
+        <form action="" id="portal-payment-form" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="portal_payment_method_select">Payment Method</label>
+                <select id="portal_payment_method_select" name="payment_method" onchange="togglePortalPaymentFields(this.value)" required>
+                    <option value="UPI">Unified Payments Interface (UPI)</option>
+                    <option value="Card">Credit / Debit Card</option>
+                    <option value="Net Banking">Net Banking</option>
+                    <option value="Cash">Cash Settlement (Stay Checkout)</option>
+                </select>
+            </div>
+            
+            <!-- UPI QR Container -->
+            <div id="portal-upi-details" class="portal-payment-fields-group">
+                <div style="background-color: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center;">
+                    <!-- Static PhonePe QR code uploaded by the user -->
+                    <div style="background-color: #ffffff; padding: 1rem; border-radius: 8px; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
+                        <img src="{% static 'images/phonepe_qr.jpg' %}" alt="PhonePe QR Code" style="width: 120px; height: 120px; border: none; display: block;">
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 0.9rem;">Scan & Pay via UPI App</strong>
+                        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.15rem;">Merchant VPA: <code>pay@aetherluxury</code></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Card details Container -->
+            <div id="portal-card-details" class="portal-payment-fields-group" style="display: none;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Cardholder Name</label>
+                    <input type="text" name="card_name" placeholder="John Doe">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Card Number</label>
+                    <input type="text" name="card_number" placeholder="4111 2222 3333 4444" minlength="16" maxlength="19">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Expiry Date</label>
+                        <input type="text" name="card_expiry" placeholder="MM/YY" maxlength="5">
+                    </div>
+                    <div class="form-group">
+                        <label>CVV / CVC</label>
+                        <input type="password" name="card_cvv" placeholder="•••" maxlength="3">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Net Banking details Container -->
+            <div id="portal-netbanking-details" class="portal-payment-fields-group" style="display: none;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Select Your Bank</label>
+                    <select name="nb_bank_name">
+                        <option value="State Bank of India">State Bank of India</option>
+                        <option value="HDFC Bank">HDFC Bank</option>
+                        <option value="ICICI Bank">ICICI Bank</option>
+                        <option value="Axis Bank">Axis Bank</option>
+                        <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Online Banking Account Number</label>
+                    <input type="text" name="nb_account" placeholder="e.g. 30192837465">
+                </div>
+                <div class="form-group">
+                    <label>Bank IFSC Code</label>
+                    <input type="text" name="nb_ifsc" placeholder="SBIN0003019">
+                </div>
+            </div>
+            
+            <!-- Cash Details Container -->
+            <div id="portal-cash-details" class="portal-payment-fields-group" style="display: none;">
+                <div style="background-color: var(--success-bg); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-sm); padding: 1.25rem; font-size: 0.85rem; color: var(--success); display: flex; gap: 0.75rem;">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="flex-shrink: 0; margin-top: 0.1rem;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <strong>Physical Cash Settlement at Checkout</strong><br>
+                        Notify lobby receptionist that you wish to settle this statement via physical cash at the time of key checkout.
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, var(--primary), var(--secondary));">Settle Bill</button>
+                <button type="button" onclick="closeModal('portal-payment-modal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scripts Section -->
+<script>
+    function switchTab(sectionId, btnElement) {
+        const sections = document.querySelectorAll('.tab-content');
+        sections.forEach(sec => sec.style.display = 'none');
+        
+        const targetSec = document.getElementById(sectionId);
+        if (targetSec) targetSec.style.display = 'block';
+        
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => {
+            btn.style.color = 'var(--text-secondary)';
+            btn.style.borderBottom = '3px solid transparent';
+            btn.classList.remove('active');
+        });
+        
+        btnElement.style.color = 'var(--primary)';
+        btnElement.style.borderBottom = '3px solid var(--primary)';
+        btnElement.classList.add('active');
+    }
+
+    // Modal Helpers
+    function openBookingModal(roomId, roomNumber, price) {
+        document.getElementById('modal-room-id').value = roomId;
+        document.getElementById('modal-room-display').value = "Room " + roomNumber;
+        document.getElementById('modal-room-price').value = "₹" + price + " per night";
+        
+        // Pre-fill today and tomorrow dates
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        document.getElementById('modal-check-in').value = today.toISOString().split('T')[0];
+        document.getElementById('modal-check-out').value = tomorrow.toISOString().split('T')[0];
+        
+        // Double booking warning check
+        const hasExisting = {% if has_existing_booking %}true{% else %}false{% endif %};
+        const extraContainer = document.getElementById('extra-room-container');
+        const extraCheckbox = document.getElementById('is_extra_room');
+        
+        if (hasExisting) {
+            extraContainer.style.display = 'block';
+            extraCheckbox.required = true;
+            extraCheckbox.checked = false;
+            
+            // Show alert box
+            alert("⚠️ Stay Reservation Alert:\n\nYou have already booked a room. If you need one more room, you can place an additional booking request, which will incur an Extra Chamber Surcharge of ₹1,000.00. Please confirm the surcharge checkbox on the reservation form.");
+        } else {
+            extraContainer.style.display = 'none';
+            extraCheckbox.required = false;
+            extraCheckbox.checked = false;
+        }
+        
+        document.getElementById('booking-modal').style.display = 'flex';
+    }
+
+    function openPortalPaymentModal(invoiceId, invoiceNumber, amount) {
+        try {
+            const form = document.getElementById('portal-payment-form');
+            if (form) {
+                form.action = "/invoices/" + invoiceId + "/pay/";
+            }
+            const numEl = document.getElementById('portal-modal-inv-num');
+            if (numEl) {
+                numEl.innerText = invoiceNumber;
+            }
+            
+            let cleanAmount = String(amount).replace(/[^0-9.]/g, '').trim();
+            let val = parseFloat(cleanAmount);
+            let displayAmount = isNaN(val) ? "0.00" : val.toFixed(2);
+            
+            const amtEl = document.getElementById('portal-modal-amount');
+            if (amtEl) {
+                amtEl.innerText = displayAmount;
+            }
+            
+            const modal = document.getElementById('portal-payment-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+            togglePortalPaymentFields('UPI');
+        } catch (e) {
+            console.error("Error launching portal payment modal: ", e);
+        }
+    }
+    
+    function togglePortalPaymentFields(value) {
+        document.querySelectorAll('.portal-payment-fields-group').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.portal-payment-fields-group input').forEach(el => el.removeAttribute('required'));
+        
+        if (value === 'UPI') {
+            document.getElementById('portal-upi-details').style.display = 'block';
+        } else if (value === 'Card') {
+            document.getElementById('portal-card-details').style.display = 'block';
+            document.querySelectorAll('#portal-card-details input').forEach(el => el.setAttribute('required', 'true'));
+        } else if (value === 'Net Banking') {
+            document.getElementById('portal-netbanking-details').style.display = 'block';
+            document.querySelectorAll('#portal-netbanking-details input').forEach(el => el.setAttribute('required', 'true'));
+        } else if (value === 'Cash') {
+            document.getElementById('portal-cash-details').style.display = 'block';
+        }
+    }
+
+    function openFoodModal(dishName, price) {
+        document.getElementById('modal-dish-name').value = dishName;
+        document.getElementById('modal-dish-price').value = price;
+        document.getElementById('modal-dish-display').value = dishName + " - ₹" + price;
+        
+        document.getElementById('food-modal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+</script>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .tab-btn:hover {
+        color: var(--primary) !important;
+    }
+    
+    .room-number-link:hover {
+        border-bottom-style: solid !important;
+        transform: translateY(-2px) scale(1.03);
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock %}
