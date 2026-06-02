@@ -142,4 +142,28 @@
         background-color: rgba(255, 255, 255, 0.01) !important;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const usernameInput = document.getElementById('mgr-username');
+    const passwordInput = document.getElementById('mgr-password');
+    const form = usernameInput ? usernameInput.closest('form') : null;
+
+    if (usernameInput && passwordInput && form) {
+        // Retrieve saved credentials on load
+        const savedUsername = localStorage.getItem('mgr_username');
+        const savedPassword = localStorage.getItem('mgr_password');
+        if (savedUsername) usernameInput.value = savedUsername;
+        if (savedPassword) passwordInput.value = savedPassword;
+
+        // Save credentials on submission
+        form.addEventListener('submit', () => {
+            if (usernameInput.value && passwordInput.value) {
+                localStorage.setItem('mgr_username', usernameInput.value);
+                localStorage.setItem('mgr_password', passwordInput.value);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

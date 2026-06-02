@@ -56,6 +56,8 @@
                             {% if invoice.id_proof %}
                             &bull; <a href="{{ invoice.id_proof.url }}" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: 600;">View ID Proof</a>
                             {% endif %}
+                            <br>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); display: inline-block; margin-top: 0.25rem;">Booked on: {{ invoice.created_at|date:"d M Y, H:i" }}</span>
                         </p>
                     </div>
                 </div>
