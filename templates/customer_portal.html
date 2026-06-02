@@ -53,6 +53,9 @@
                         <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.15rem;">Invoice {{ invoice.invoice_number }}</h3>
                         <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
                             Room {{ invoice.room.room_number }} ({{ invoice.room.category }}) &bull; Stay duration: {{ invoice.nights_count }} Nights
+                            {% if invoice.id_proof %}
+                            &bull; <a href="{{ invoice.id_proof.url }}" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: 600;">View ID Proof</a>
+                            {% endif %}
                         </p>
                     </div>
                 </div>
@@ -109,7 +112,13 @@
                         {% for req in booking_requests %}
                         <tr {% if req.status == 'Rejected' %}style="background-color: rgba(239, 68, 68, 0.03); border-left: 3px solid var(--danger);"{% endif %}>
                             <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ req.created_at|date:"M d, Y H:i" }}</td>
-                            <td style="font-weight: 600;">Room {{ req.room.room_number }} ({{ req.room.category }})</td>
+                            <td style="font-weight: 600;">
+                                Room {{ req.room.room_number }} ({{ req.room.category }})
+                                {% if req.id_proof %}
+                                <br>
+                                <a href="{{ req.id_proof.url }}" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: underline; font-weight: 500; display: inline-block; margin-top: 0.25rem;">View ID Proof</a>
+                                {% endif %}
+                            </td>
                             <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ req.check_in_date|date:"M d" }} - {{ req.check_out_date|date:"M d, Y" }}</td>
                             <td>{{ req.nights_count }} Nights</td>
                             <td>{{ req.num_guests }} Guest{{ req.num_guests|pluralize }}</td>
@@ -412,7 +421,7 @@
         <button type="button" onclick="closeModal('booking-modal')" class="close-modal">&times;</button>
         <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem; font-family: var(--font-heading);">Chamber Stay Reservation</h2>
         
-        <form action="{% url 'customer_book_room' %}" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <form action="{% url 'customer_book_room' %}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1.25rem;">
             {% csrf_token %}
             <input type="hidden" id="modal-room-id" name="room">
             
@@ -440,6 +449,11 @@
                 <label for="modal-guests">Number of Guests *</label>
                 <input type="number" id="modal-guests" name="num_guests" min="1" max="10" value="1" required>
                 <small style="color: var(--text-muted); font-size: 0.75rem;">Occupancy caps: Standard 2, Deluxe 3, Suite 5.</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="modal-id-proof">Upload ID Proof (Aadhar or PAN card) *</label>
+                <input type="file" id="modal-id-proof" name="id_proof" accept="image/*,.pdf" required style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: var(--text-color);">
             </div>
             
             <!-- Extra Chamber Surcharge Confirmation -->

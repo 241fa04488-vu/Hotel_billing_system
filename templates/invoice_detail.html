@@ -78,7 +78,10 @@
             </p>
             <p style="color: #475569; font-size: 0.9rem; line-height: 1.4; font-weight: 500;">
                 {% if invoice.customer_email %}{{ invoice.customer_email }}<br>{% endif %}
-                {% if invoice.customer_phone %}{{ invoice.customer_phone }}{% endif %}
+                {% if invoice.customer_phone %}{{ invoice.customer_phone }}<br>{% endif %}
+                {% if invoice.id_proof %}
+                <a href="{{ invoice.id_proof.url }}" target="_blank" class="badge badge-success" style="display: inline-block; margin-top: 0.5rem; text-decoration: none; padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 700; color: #ffffff; background-color: var(--success); border-radius: var(--radius-sm);">View ID Proof</a>
+                {% endif %}
             </p>
         </div>
         <div class="info-col">

@@ -70,6 +70,7 @@ class Invoice(models.Model):
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='Cash')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='Pending')
     verification_photo = models.TextField(blank=True, null=True)
+    id_proof = models.FileField(upload_to='id_proofs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
@@ -188,6 +189,7 @@ class BookingRequest(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     num_guests = models.PositiveIntegerField(default=1)
     rejection_reason = models.CharField(max_length=255, blank=True, null=True)
+    id_proof = models.FileField(upload_to='id_proofs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property

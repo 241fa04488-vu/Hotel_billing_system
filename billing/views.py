@@ -164,6 +164,7 @@ def invoice_create(request):
         tax_rate_val = request.POST.get('tax_rate', '12.00')
         payment_method = request.POST.get('payment_method', 'Cash')
         payment_status = request.POST.get('payment_status', 'Pending')
+        id_proof = request.FILES.get('id_proof')
         
         if not customer_name or not room_id or not check_in_str or not check_out_str:
             messages.error(request, "Please fill in all required fields.")
@@ -271,7 +272,8 @@ def invoice_create(request):
                 discount=float(discount_val or 0),
                 tax_rate=float(tax_rate_val or 12),
                 payment_method=payment_method,
-                payment_status=payment_status
+                payment_status=payment_status,
+                id_proof=id_proof
             )
             
             invoice.save()
@@ -825,6 +827,7 @@ def customer_book_room(request):
         room_id = request.POST.get('room')
         check_in_str = request.POST.get('check_in_date')
         check_out_str = request.POST.get('check_out_date')
+        id_proof = request.FILES.get('id_proof')
         
         if not room_id or not check_in_str or not check_out_str:
             messages.error(request, "All dates and room details must be supplied.")
@@ -895,7 +898,8 @@ def customer_book_room(request):
                     check_out_date=check_out,
                     num_guests=num_guests,
                     status='Rejected',
-                    rejection_reason=rejection_reason
+                    rejection_reason=rejection_reason,
+                    id_proof=id_proof
                 )
                 messages.error(request, f"Booking request REJECTED: {rejection_reason}")
             else:
@@ -905,7 +909,8 @@ def customer_book_room(request):
                     check_in_date=check_in,
                     check_out_date=check_out,
                     num_guests=num_guests,
-                    status='Approved'
+                    status='Approved',
+                    id_proof=id_proof
                 )
                 
                 # Auto-transition Room state on successful approval
@@ -923,7 +928,8 @@ def customer_book_room(request):
                     check_out_date=check_out,
                     room_charges=room.price_per_night * nights,
                     payment_status='Pending',
-                    payment_method='Cash'
+                    payment_method='Cash',
+                    id_proof=id_proof
                 )
                 
                 # If confirmed as an extra chamber, automatically inject the surcharge InvoiceItem

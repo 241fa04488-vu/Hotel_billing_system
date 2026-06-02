@@ -7,7 +7,7 @@
     <p style="color: var(--text-secondary); margin-top: 0.25rem;">Compile new checkout details, compute service charges, and print invoices.</p>
 </div>
 
-<form method="POST" action="{% url 'invoice_create' %}" id="invoice-checkout-form">
+<form method="POST" action="{% url 'invoice_create' %}" id="invoice-checkout-form" enctype="multipart/form-data">
     {% csrf_token %}
     
     <div class="layout-split" style="grid-template-columns: 1.8fr 1.2fr; gap: 2rem;">
@@ -50,6 +50,11 @@
                             <label for="customer_phone">Phone Number</label>
                             <input type="tel" id="customer_phone" name="customer_phone" placeholder="e.g. 9876543210" pattern="[0-9]{10}" maxlength="10" minlength="10" title="Please enter exactly 10 digits phone number (numeric only)">
                         </div>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="id_proof">Upload ID Proof (Aadhar or PAN Card) *</label>
+                        <input type="file" id="id_proof" name="id_proof" accept="image/*,.pdf" required style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: var(--text-color);">
                     </div>
                     
                     <!-- Extra Chamber Surcharge Confirmation -->
