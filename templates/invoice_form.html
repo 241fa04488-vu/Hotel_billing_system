@@ -87,6 +87,18 @@
                     
                     const activeCustomerIds = {{ active_customer_ids|safe }};
                     const activeCustomerNames = {{ active_customer_names|safe }};
+
+                    // Registered guests array
+                    const registeredGuests = [
+                        {% for cust in customers %}
+                        {
+                            id: "{{ cust.pk }}",
+                            name: "{{ cust.first_name }} {{ cust.last_name }}",
+                            email: "{{ cust.email }}",
+                            phone: "{{ cust.profile.phone|default:'' }}"
+                        },
+                        {% endfor %}
+                    ];
                     
                     // Synthesize warning alert chime
                     function playTriggerSound() {
@@ -158,6 +170,20 @@
                             extraCheckbox.checked = false;
                         }
                     }
+
+                    // Helper to auto-fill guest details
+                    function autoFillFromGuest(guest) {
+                        guestSelect.value = guest.id;
+                        nameInput.value = guest.name;
+                        emailInput.value = guest.email;
+                        phoneInput.value = guest.phone;
+                        
+                        nameInput.setAttribute('readonly', 'true');
+                        emailInput.setAttribute('readonly', 'true');
+                        phoneInput.setAttribute('readonly', 'true');
+                        
+                        setTimeout(checkDoubleBooking, 100);
+                    }
                     
                     if (guestSelect) {
                         guestSelect.addEventListener('change', (e) => {
@@ -187,6 +213,37 @@
                     if (nameInput) {
                         nameInput.addEventListener('change', checkDoubleBooking);
                         nameInput.addEventListener('blur', checkDoubleBooking);
+                    }
+
+                    // Auto-fill listeners for Phone and Email inputs
+                    if (phoneInput) {
+                        phoneInput.addEventListener('input', () => {
+                            if (guestSelect && guestSelect.value === 'new') {
+                                const val = phoneInput.value.trim().replace(/\D/g, '');
+                                if (val.length === 10) {
+                                    const matched = registeredGuests.find(g => g.phone === val);
+                                    if (matched) {
+                                        autoFillFromGuest(matched);
+                                        alert("✨ Registered Guest found! Auto-filled profile details for " + matched.name);
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    if (emailInput) {
+                        emailInput.addEventListener('input', () => {
+                            if (guestSelect && guestSelect.value === 'new') {
+                                const val = emailInput.value.trim().toLowerCase();
+                                if (val.includes('@') && val.includes('.')) {
+                                    const matched = registeredGuests.find(g => g.email.toLowerCase() === val);
+                                    if (matched) {
+                                        autoFillFromGuest(matched);
+                                        alert("✨ Registered Guest found! Auto-filled profile details for " + matched.name);
+                                    }
+                                }
+                            }
+                        });
                     }
                 });
             </script>
