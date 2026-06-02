@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: hotel-billing-system
+    runtime: python
+    buildCommand: "bash build.sh"
+    startCommand: "python manage.py migrate && python seed_rooms.py && python seed_users.py && gunicorn hotel_billing.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
