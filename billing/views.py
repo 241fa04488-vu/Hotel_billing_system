@@ -308,6 +308,14 @@ def invoice_create(request):
                 room.save()
                 
             messages.success(request, f"Invoice {invoice.invoice_number} created successfully!")
+            
+            # Send booking confirmation email automatically if guest user exists
+            if cust_user:
+                try:
+                    send_booking_email(cust_user, room, check_in_date, check_out_date, invoice)
+                except Exception as ex:
+                    print(f"Failed to send booking confirmation email: {str(ex)}")
+                    
             return redirect('invoice_detail', pk=invoice.pk)
             
         except Exception as e:
@@ -958,6 +966,13 @@ def invoice_pay(request, pk):
             invoice.room.status = 'Cleaning'
             invoice.room.save()
             
+        # Send payment confirmation email automatically if customer exists
+        if invoice.customer_user:
+            try:
+                send_booking_email(invoice.customer_user, invoice.room, invoice.check_in_date, invoice.check_out_date, invoice)
+            except Exception as ex:
+                print(f"Failed to send payment confirmation email: {str(ex)}")
+            
         success_msg = f"Payment of ₹{invoice.grand_total:.2f} settled successfully via {payment_method}!"
         if payment_method == 'UPI':
             success_msg += " (UPI transaction verified)"
@@ -1094,6 +1109,12 @@ def invoice_send_print_otp(request, pk):
     # Store in session
     request.session['print_otp'] = otp_code
     request.session['print_otp_inv'] = pk
+    
+    # Dump Print OTP code to python console as a reliable lobby staff backup
+    print(f"\n==========================================")
+    print(f"PRINT RECEIPT OTP GENERATED: {otp_code}")
+    print(f"For Invoice: {invoice.invoice_number}")
+    print(f"==========================================\n")
     
     # Resolve guest user from invoice customer_user
     user = invoice.customer_user
