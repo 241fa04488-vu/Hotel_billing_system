@@ -997,6 +997,27 @@ class CancellationAndValidationTest(TestCase):
         self.assertEqual(user.email, 'savedemail@example.com')
         self.assertEqual(user.profile.phone, '9876543210')
 
+    def test_customer_signup_explicit(self):
+        post_data = {
+            'action': 'signup',
+            'username': 'registeredguest',
+            'password': 'registeredguest123',
+            'first_name': 'Registered',
+            'last_name': 'Guest',
+            'email': 'registered@example.com',
+            'phone': '1234567890'
+        }
+        response = self.client.post(reverse('customer_login'), post_data)
+        self.assertEqual(response.status_code, 302)
+        
+        # Verify user and user profile are created and saved
+        user = User.objects.filter(username='registeredguest').first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.first_name, 'Registered')
+        self.assertEqual(user.last_name, 'Guest')
+        self.assertEqual(user.email, 'registered@example.com')
+        self.assertEqual(user.profile.phone, '1234567890')
+
 
 
 

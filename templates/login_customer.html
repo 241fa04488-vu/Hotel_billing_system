@@ -16,7 +16,7 @@
     <div style="display: flex; gap: 2rem; justify-content: center; align-items: flex-start; flex-wrap: wrap; width: 100%; max-width: 1200px; padding: 1rem;" class="no-print">
         
         <!-- WINDOW 1: GUEST PORTAL (Active) -->
-        <div class="glass-card login-window active-window-guest" style="width: 100%; max-width: 360px; border-radius: var(--radius-lg); padding: 2.5rem; background: rgba(244, 63, 94, 0.04); border: 2px solid rgba(244, 63, 94, 0.45); box-shadow: 0 10px 40px rgba(244, 63, 94, 0.15); transition: var(--transition); animation: fadeInUp 0.4s ease-out; position: relative; min-height: 480px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="glass-card login-window active-window-guest" style="width: 100%; max-width: 400px; border-radius: var(--radius-lg); padding: 2.5rem; background: rgba(244, 63, 94, 0.04); border: 2px solid rgba(244, 63, 94, 0.45); box-shadow: 0 10px 40px rgba(244, 63, 94, 0.15); transition: var(--transition); animation: fadeInUp 0.4s ease-out; position: relative; min-height: 520px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="text-align: center; margin-bottom: 1.5rem;">
                     <div style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); color: #f43f5e; margin-bottom: 0.75rem;">
@@ -28,23 +28,71 @@
                     <span class="badge badge-danger" style="font-size: 0.65rem; padding: 0.15rem 0.5rem; margin-top: 0.35rem; display: inline-block; background-color: rgba(244,63,94,0.15); color:#f43f5e;">Active Channel</span>
                 </div>
 
-                <form method="POST" action="{% url 'customer_login' %}" style="display: flex; flex-direction: column; gap: 1.25rem;">
-                    {% csrf_token %}
-                    <input type="hidden" id="cust-email-hidden" name="email">
-                    <input type="hidden" id="cust-phone-hidden" name="phone">
-                    <div class="form-group">
-                        <label for="cust-username" style="font-size:0.75rem;">Username</label>
-                        <input type="text" id="cust-username" name="username" placeholder="Enter any username" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
-                    </div>
-                    <div class="form-group">
-                        <label for="cust-password" style="font-size:0.75rem;">Password</label>
-                        <input type="password" id="cust-password" name="password" placeholder="username123" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
-                        <small style="color: rgba(244, 63, 94, 0.7); font-size: 0.7rem; margin-top: 0.25rem; display: block; font-weight: 500;">Password must be your username followed by '123' (e.g. john123).</small>
-                    </div>
-                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #f43f5e, #e11d48); color: #ffffff; width: 100%; padding: 0.75rem; font-weight: 700; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.25); margin-top: 0.25rem;">
-                        <span>Access Portal</span>
-                    </button>
-                </form>
+                <!-- Tab Selector for Existing or New User -->
+                <div style="display: flex; background: rgba(0,0,0,0.25); border-radius: var(--radius-sm); padding: 0.25rem; margin-bottom: 1.5rem;" class="no-print">
+                    <button type="button" id="tab-login" onclick="switchGuestTab('login')" style="flex: 1; border: none; padding: 0.5rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: var(--transition); background: #f43f5e; color: #ffffff;">Existing Guest</button>
+                    <button type="button" id="tab-signup" onclick="switchGuestTab('signup')" style="flex: 1; border: none; padding: 0.5rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-secondary);">New Guest</button>
+                </div>
+
+                <!-- Existing User Login Container -->
+                <div id="guest-login-container" style="display: block;">
+                    <form method="POST" action="{% url 'customer_login' %}" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="login">
+                        <input type="hidden" id="cust-email-hidden" name="email">
+                        <input type="hidden" id="cust-phone-hidden" name="phone">
+                        <div class="form-group">
+                            <label for="cust-username" style="font-size:0.75rem;">Username</label>
+                            <input type="text" id="cust-username" name="username" placeholder="Enter your username" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label for="cust-password" style="font-size:0.75rem;">Password</label>
+                            <input type="password" id="cust-password" name="password" placeholder="username123" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                            <small style="color: rgba(244, 63, 94, 0.7); font-size: 0.7rem; margin-top: 0.25rem; display: block; font-weight: 500;">Password must be your username followed by '123'.</small>
+                        </div>
+                        <button type="submit" class="btn" style="background: linear-gradient(135deg, #f43f5e, #e11d48); color: #ffffff; width: 100%; padding: 0.75rem; font-weight: 700; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.25); margin-top: 0.25rem;">
+                            <span>Access Portal</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- New User Signup Container -->
+                <div id="guest-signup-container" style="display: none;">
+                    <form method="POST" action="{% url 'customer_login' %}" style="display: flex; flex-direction: column; gap: 1rem;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="signup">
+                        <div class="form-group">
+                            <label for="signup-username" style="font-size:0.75rem;">Desired Username</label>
+                            <input type="text" id="signup-username" name="username" placeholder="e.g. johndoe" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group">
+                                <label for="signup-first-name" style="font-size:0.75rem;">First Name</label>
+                                <input type="text" id="signup-first-name" name="first_name" placeholder="John" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                            </div>
+                            <div class="form-group">
+                                <label for="signup-last-name" style="font-size:0.75rem;">Last Name</label>
+                                <input type="text" id="signup-last-name" name="last_name" placeholder="Doe" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email" style="font-size:0.75rem;">Email Address</label>
+                            <input type="email" id="signup-email" name="email" placeholder="john@example.com" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-phone" style="font-size:0.75rem;">Phone Number (10 digits)</label>
+                            <input type="tel" id="signup-phone" name="phone" placeholder="9876543210" required pattern="[0-9]{10}" maxlength="10" minlength="10" style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password" style="font-size:0.75rem;">Password</label>
+                            <input type="password" id="signup-password" name="password" placeholder="Auto-fills as username123" required readonly style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.15); padding: 0.6rem 0.8rem; font-size: 0.9rem; cursor: not-allowed; color: var(--text-secondary);">
+                            <small style="color: rgba(244, 63, 94, 0.7); font-size: 0.7rem; margin-top: 0.25rem; display: block; font-weight: 500;">Password auto-generates to match the system requirement.</small>
+                        </div>
+                        <button type="submit" class="btn" style="background: linear-gradient(135deg, #f43f5e, #e11d48); color: #ffffff; width: 100%; padding: 0.75rem; font-weight: 700; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.25); margin-top: 0.5rem;">
+                            <span>Create Account & Sign In</span>
+                        </button>
+                    </form>
+                </div>
             </div>
             
             <div style="margin-top: 1.5rem; text-align: center; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
@@ -147,14 +195,38 @@
 </style>
 
 <script>
+function switchGuestTab(mode) {
+    const loginTab = document.getElementById('tab-login');
+    const signupTab = document.getElementById('tab-signup');
+    const loginContainer = document.getElementById('guest-login-container');
+    const signupContainer = document.getElementById('guest-signup-container');
+
+    if (mode === 'login') {
+        loginTab.style.background = '#f43f5e';
+        loginTab.style.color = '#ffffff';
+        signupTab.style.background = 'transparent';
+        signupTab.style.color = 'var(--text-secondary)';
+        loginContainer.style.display = 'block';
+        signupContainer.style.display = 'none';
+    } else {
+        signupTab.style.background = '#f43f5e';
+        signupTab.style.color = '#ffffff';
+        loginTab.style.background = 'transparent';
+        loginTab.style.color = 'var(--text-secondary)';
+        loginContainer.style.display = 'none';
+        signupContainer.style.display = 'block';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Existing login logic & auto-restore
     const usernameInput = document.getElementById('cust-username');
     const passwordInput = document.getElementById('cust-password');
     const emailHidden = document.getElementById('cust-email-hidden');
     const phoneHidden = document.getElementById('cust-phone-hidden');
-    const form = usernameInput ? usernameInput.closest('form') : null;
+    const loginForm = usernameInput ? usernameInput.closest('form') : null;
 
-    if (usernameInput && passwordInput && form) {
+    if (usernameInput && passwordInput && loginForm) {
         // Retrieve saved credentials on load
         const savedUsername = localStorage.getItem('cust_username');
         const savedPassword = localStorage.getItem('cust_password');
@@ -162,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedPassword) passwordInput.value = savedPassword;
 
         // Save credentials on submission and auto-fill hidden fields
-        form.addEventListener('submit', () => {
+        loginForm.addEventListener('submit', () => {
             const username = usernameInput.value.trim().toLowerCase();
             if (username && passwordInput.value) {
                 localStorage.setItem('cust_username', usernameInput.value);
@@ -173,6 +245,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 const storedPhone = localStorage.getItem('guest_phone_' + username);
                 if (storedEmail) emailHidden.value = storedEmail;
                 if (storedPhone) phoneHidden.value = storedPhone;
+            }
+        });
+    }
+
+    // 2. Signup password auto-generator logic
+    const signupUsername = document.getElementById('signup-username');
+    const signupPassword = document.getElementById('signup-password');
+    if (signupUsername && signupPassword) {
+        signupUsername.addEventListener('input', () => {
+            const val = signupUsername.value.trim().toLowerCase();
+            signupPassword.value = val ? val + '123' : '';
+        });
+    }
+
+    // 3. Signup form submission local storage saving
+    const signupForm = document.querySelector('#guest-signup-container form');
+    if (signupForm) {
+        signupForm.addEventListener('submit', () => {
+            const username = signupUsername.value.trim().toLowerCase();
+            const email = document.getElementById('signup-email').value.trim();
+            const phone = document.getElementById('signup-phone').value.trim();
+            if (username) {
+                localStorage.setItem('cust_username', username);
+                localStorage.setItem('cust_password', username + '123');
+                if (email) localStorage.setItem('guest_email_' + username, email);
+                if (phone) localStorage.setItem('guest_phone_' + username, phone);
             }
         });
     }

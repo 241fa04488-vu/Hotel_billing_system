@@ -502,7 +502,8 @@ def customer_login(request):
             logout(request) # Log out invalid role session
 
     if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
+        action = request.POST.get('action', 'login')
+        username = request.POST.get('username', '').strip().lower()
         password = request.POST.get('password', '').strip()
         
         # Stored inputs from localStorage to prevent loss if database is reset/cleared
@@ -513,10 +514,47 @@ def customer_login(request):
             messages.error(request, "Please enter both username and password.")
             return render(request, 'login_customer.html')
             
-        if password == f"{username}123":
-            # auto-create/update user to have this correct password and guest role
+        if action == 'signup':
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            
+            if not first_name or not last_name or not email_val or not phone_val:
+                messages.error(request, "All fields (Username, Password, First/Last Name, Email, Phone) are required to sign up.")
+                return render(request, 'login_customer.html')
+                
+            if password != f"{username}123":
+                messages.error(request, f"For registration, password must be your username followed by '123' (e.g. {username}123).")
+                return render(request, 'login_customer.html')
+                
+            user = User.objects.filter(username=username).first()
+            if user:
+                messages.error(request, "Username already registered. Please log in.")
+                return render(request, 'login_customer.html')
+                
+            try:
+                # Create user
+                user = User.objects.create_user(
+                    username=username,
+                    email=email_val,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                user.profile.role = 'Customer'
+                user.profile.phone = phone_val
+                user.profile.save()
+            except Exception as e:
+                messages.error(request, f"Error during sign up: {str(e)}")
+                return render(request, 'login_customer.html')
+                
+        else: # login action
+            if password != f"{username}123":
+                messages.error(request, f"Invalid password. For guest login, password must be '{username}123'.")
+                return render(request, 'login_customer.html')
+                
             user = User.objects.filter(username=username).first()
             if not user:
+                # Auto-create/update user to have this correct password and guest role for backwards compatibility/tests
                 user = User.objects.create_user(
                     username=username,
                     email=email_val or f"{username}@domain.com",
@@ -540,10 +578,7 @@ def customer_login(request):
                         if phone_val:
                             user.profile.phone = phone_val
                         user.profile.save()
-        else:
-            messages.error(request, f"Invalid password. For guest login, password must be '{username}123'.")
-            return render(request, 'login_customer.html')
-            
+
         user = authenticate(request, username=username, password=password)
         if user is not None:
             role = getattr(getattr(user, 'profile', None), 'role', None)
