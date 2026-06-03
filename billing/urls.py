@@ -15,6 +15,7 @@ urlpatterns = [
     # Customer Actions
     path('customer/book-room/', views.customer_book_room, name='customer_book_room'),
     path('customer/order-food/', views.customer_order_food, name='customer_order_food'),
+    path('customer/orders/<int:pk>/status/', views.customer_order_status, name='customer_order_status'),
     path('customer/verify-otp/', views.customer_verify_otp, name='customer_verify_otp'),
     
     # Rooms & Inventories

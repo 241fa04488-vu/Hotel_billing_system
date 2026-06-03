@@ -197,6 +197,7 @@
                                 <span class="badge badge-success">Delivered</span>
                                 {% else %}
                                 <span class="badge badge-warning">Preparing</span>
+                                <a href="{% url 'customer_order_status' order.pk %}" style="display: inline-block; margin-left: 0.5rem; font-size: 0.75rem; color: var(--primary); text-decoration: underline; font-weight: 600;">Track Delivery</a>
                                 {% endif %}
                             </td>
                         </tr>

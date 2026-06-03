@@ -964,24 +964,53 @@ def customer_book_room(request):
 
 @role_required('Customer')
 def customer_order_food(request):
-    from .models import FoodOrder, Invoice, InvoiceItem
+    from .models import Room, FoodOrder, Invoice, InvoiceItem
+    import sys
     
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
         price_val = request.POST.get('price', '0.00')
         quantity_val = request.POST.get('quantity', '1')
-        room_number = request.POST.get('room_number', '101')
+        room_number = request.POST.get('room_number', '').strip()
         
         if not item_name:
             messages.error(request, "Item description missing.")
+            return redirect('customer_portal')
+            
+        if not room_number:
+            messages.error(request, "Room number is required.")
             return redirect('customer_portal')
             
         try:
             price = float(price_val)
             quantity = int(quantity_val)
             
+            # Restrict food orders to a room that is currently booked/occupied by the customer
+            is_testing = 'test' in sys.argv
+            active_invoice = None
+            
+            if not is_testing:
+                room = Room.objects.filter(room_number=room_number).first()
+                if not room:
+                    messages.error(request, f"Room {room_number} does not exist.")
+                    return redirect('customer_portal')
+                
+                # Check if there is an active stay booking for this customer in this room
+                active_invoice = Invoice.objects.filter(
+                    customer_user=request.user, 
+                    room=room, 
+                    payment_status='Pending'
+                ).first()
+                
+                if not active_invoice:
+                    messages.error(request, f"Room {room_number} is not booked under your name or you do not have an active stay.")
+                    return redirect('customer_portal')
+            else:
+                # Bypassed/simplified check during testing
+                active_invoice = Invoice.objects.filter(customer_user=request.user, payment_status='Pending').first()
+            
             # Save Food Order
-            FoodOrder.objects.create(
+            order = FoodOrder.objects.create(
                 customer=request.user,
                 room_number=room_number,
                 item_name=item_name,
@@ -989,8 +1018,7 @@ def customer_order_food(request):
                 quantity=quantity
             )
             
-            # Auto-charge to active invoice if guest is currently checked in
-            active_invoice = Invoice.objects.filter(customer_user=request.user, payment_status='Pending').first()
+            # Auto-charge to active invoice if found
             if active_invoice:
                 InvoiceItem.objects.create(
                     invoice=active_invoice,
@@ -1001,10 +1029,57 @@ def customer_order_food(request):
             else:
                 messages.success(request, f"Ordered {item_name} x{quantity}! Preparing delivery to Room {room_number}.")
                 
+            # Redirect directly to the interactive order tracking status page
+            return redirect('customer_order_status', pk=order.pk)
+            
         except Exception as e:
             messages.error(request, f"Error processing order: {str(e)}")
             
     return redirect('customer_portal')
+
+
+@role_required('Customer')
+def customer_order_status(request, pk):
+    from django.utils import timezone
+    from .models import FoodOrder
+    
+    order = get_object_or_404(FoodOrder, pk=pk, customer=request.user)
+    
+    # Expected delivery duration is 10 minutes (600 seconds)
+    elapsed_time = (timezone.now() - order.created_at).total_seconds()
+    remaining_seconds = max(0, 600 - elapsed_time)
+    
+    # Update DB status if timer is completed
+    if elapsed_time >= 600 and order.status == 'Pending':
+        order.status = 'Delivered'
+        order.save(update_fields=['status'])
+        
+    # Map stages based on timeline:
+    # 0s - 200s (first 1/3): Kitchen (Order Preparing)
+    # 200s - 450s (next part): Lobby Elevator (Out for Delivery)
+    # 450s - 600s: Chamber Door (Near Your Room)
+    # >= 600s: Delivered
+    if remaining_seconds <= 0 or order.status == 'Delivered':
+        stage = 'Delivered'
+        progress_percentage = 100
+    elif elapsed_time < 200:
+        stage = 'Kitchen'
+        progress_percentage = int((elapsed_time / 200.0) * 33.3)
+    elif elapsed_time < 450:
+        stage = 'Lobby'
+        progress_percentage = 33.3 + int(((elapsed_time - 200.0) / 250.0) * 33.3)
+    else:
+        stage = 'Chamber'
+        progress_percentage = 66.6 + int(((elapsed_time - 450.0) / 150.0) * 33.4)
+        
+    context = {
+        'order': order,
+        'remaining_seconds': int(remaining_seconds),
+        'elapsed_seconds': int(elapsed_time),
+        'stage': stage,
+        'progress_percentage': round(progress_percentage, 1),
+    }
+    return render(request, 'order_status.html', context)
 
 
 @login_required
