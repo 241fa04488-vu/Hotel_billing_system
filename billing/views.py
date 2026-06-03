@@ -14,17 +14,14 @@ def sync_room_statuses():
     if 'test' in sys.argv:
         return
     try:
-        # Sync room occupied status with active pending stay invoices
-        for room in Room.objects.all():
-            has_active_stay = Invoice.objects.filter(room=room, payment_status='Pending').exists()
-            if has_active_stay:
-                if room.status != 'Occupied':
-                    room.status = 'Occupied'
-                    room.save(update_fields=['status'])
-            else:
-                if room.status == 'Occupied':
-                    room.status = 'Available'
-                    room.save(update_fields=['status'])
+        # Bulk sync room occupied status with active pending stay invoices
+        pending_room_ids = set(Invoice.objects.filter(payment_status='Pending', room__isnull=False).values_list('room_id', flat=True))
+        
+        # 1. Update rooms that should be 'Occupied' but are not
+        Room.objects.filter(id__in=pending_room_ids).exclude(status='Occupied').update(status='Occupied')
+        
+        # 2. Update rooms that are currently 'Occupied' but have no pending invoices
+        Room.objects.exclude(id__in=pending_room_ids).filter(status='Occupied').update(status='Available')
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
