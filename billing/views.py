@@ -13,17 +13,22 @@ def sync_room_statuses():
     import sys
     if 'test' in sys.argv:
         return
-    # Sync room occupied status with active pending stay invoices
-    for room in Room.objects.all():
-        has_active_stay = Invoice.objects.filter(room=room, payment_status='Pending').exists()
-        if has_active_stay:
-            if room.status != 'Occupied':
-                room.status = 'Occupied'
-                room.save()
-        else:
-            if room.status == 'Occupied':
-                room.status = 'Available'
-                room.save()
+    try:
+        # Sync room occupied status with active pending stay invoices
+        for room in Room.objects.all():
+            has_active_stay = Invoice.objects.filter(room=room, payment_status='Pending').exists()
+            if has_active_stay:
+                if room.status != 'Occupied':
+                    room.status = 'Occupied'
+                    room.save(update_fields=['status'])
+            else:
+                if room.status == 'Occupied':
+                    room.status = 'Available'
+                    room.save(update_fields=['status'])
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to sync room statuses (possibly database is locked): {e}")
 
 # -------------------------------------------------------------
 # 1. CORE DASHBOARDS (Role Protected)
