@@ -58,6 +58,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Dynamic Live Invoice Calculator
     initInvoiceCalculator();
+
+    // 4. Play notification sound on successful room booking or check-in
+    const successMessages = document.querySelectorAll('.messages-container .badge-success span');
+    let triggerChime = false;
+    successMessages.forEach(msg => {
+        const text = msg.textContent.toLowerCase();
+        if (text.includes('booked successfully') || text.includes('created successfully')) {
+            triggerChime = true;
+        }
+    });
+    if (triggerChime) {
+        playSuccessChime();
+    }
 });
 
 function initInvoiceCalculator() {
@@ -195,5 +208,38 @@ function initInvoiceCalculator() {
         
         if (summaryTaxAmount) summaryTaxAmount.textContent = taxAmount.toFixed(2);
         if (summaryTotalAmount) summaryTotalAmount.textContent = grandTotal.toFixed(2);
+    }
+}
+
+function playSuccessChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const playTone = (freq, startTime, duration) => {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startTime);
+            
+            // Soft envelope: attack, sustain, decay
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.04);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        };
+        
+        const now = audioCtx.currentTime;
+        // Luxury triad arpeggio: E5 -> A5 -> C#6
+        playTone(659.25, now, 0.4);       // E5
+        playTone(880.00, now + 0.1, 0.4); // A5
+        playTone(1108.73, now + 0.2, 0.5); // C#6
+    } catch (e) {
+        console.warn("Web Audio API notification chime blocked or unsupported:", e);
     }
 }
