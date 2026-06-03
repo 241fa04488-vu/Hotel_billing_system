@@ -1018,6 +1018,20 @@ class CancellationAndValidationTest(TestCase):
         self.assertEqual(user.email, 'registered@example.com')
         self.assertEqual(user.profile.phone, '1234567890')
 
+    def test_booking_request_list_authorization(self):
+        # Setup users if not already present
+        # In this TestCase, setUp sets up self.customer (testcustomer) and self.staff (teststaff)
+        
+        # Customers should not be authorized to view the booking request list
+        self.client.login(username="testcustomer", password="password123")
+        response = self.client.get(reverse('booking_request_list'))
+        self.assertEqual(response.status_code, 302) # redirects
+        
+        # Staff should be authorized
+        self.client.login(username="teststaff", password="password123")
+        response = self.client.get(reverse('booking_request_list'))
+        self.assertEqual(response.status_code, 200)
+
 
 
 

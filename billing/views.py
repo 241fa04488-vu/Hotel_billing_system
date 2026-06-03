@@ -9,12 +9,26 @@ from .models import Room, Invoice, InvoiceItem, UserProfile
 from .decorators import role_required
 from datetime import datetime
 
+def sync_room_statuses():
+    # Sync room occupied status with active pending stay invoices
+    for room in Room.objects.all():
+        has_active_stay = Invoice.objects.filter(room=room, payment_status='Pending').exists()
+        if has_active_stay:
+            if room.status != 'Occupied':
+                room.status = 'Occupied'
+                room.save()
+        else:
+            if room.status == 'Occupied':
+                room.status = 'Available'
+                room.save()
+
 # -------------------------------------------------------------
 # 1. CORE DASHBOARDS (Role Protected)
 # -------------------------------------------------------------
 
 @role_required('Staff', 'Manager')
 def dashboard(request):
+    sync_room_statuses()
     # Core stats
     total_rooms = Room.objects.count()
     occupied_rooms = Room.objects.filter(status='Occupied').count()
@@ -39,6 +53,9 @@ def dashboard(request):
     
     recent_invoices = Invoice.objects.all()[:5]
     
+    from .models import BookingRequest
+    recent_booking_requests = BookingRequest.objects.all()[:5]
+    
     context = {
         'total_rooms': total_rooms,
         'occupied_rooms': occupied_rooms,
@@ -49,6 +66,7 @@ def dashboard(request):
         'pending_revenue': pending_revenue,
         'occupancy_rate': occupancy_rate,
         'recent_invoices': recent_invoices,
+        'recent_booking_requests': recent_booking_requests,
         'room_stats': {
             'Standard': standard_count,
             'Deluxe': deluxe_count,
@@ -64,6 +82,7 @@ def dashboard(request):
 
 @role_required('Staff', 'Manager')
 def room_list(request):
+    sync_room_statuses()
     rooms = Room.objects.all()
     context = {
         'rooms': rooms,
@@ -121,6 +140,7 @@ def room_release(request, pk):
 
 @role_required('Staff', 'Manager')
 def invoice_list(request):
+    sync_room_statuses()
     query = request.GET.get('q', '')
     status_filter = request.GET.get('status', '')
     
@@ -146,6 +166,7 @@ def invoice_list(request):
 
 @role_required('Staff', 'Manager')
 def invoice_create(request):
+    sync_room_statuses()
     rooms = Room.objects.filter(status='Available')
     all_rooms = Room.objects.all()
     customers = User.objects.filter(profile__role='Customer')
@@ -369,6 +390,7 @@ def invoice_detail(request, pk):
 
 @role_required('Customer')
 def customer_portal(request):
+    sync_room_statuses()
     from .models import BookingRequest, FoodOrder
     
     # Handle Profile Update POST requests
@@ -1394,6 +1416,17 @@ def invoice_print_view(request, pk):
         'subtotal': subtotal,
     }
     return render(request, 'invoice_print.html', context)
+
+
+@role_required('Staff', 'Manager')
+def booking_request_list(request):
+    from .models import BookingRequest
+    sync_room_statuses()
+    booking_requests = BookingRequest.objects.all()
+    context = {
+        'booking_requests': booking_requests
+    }
+    return render(request, 'booking_request_list.html', context)
 
 
 

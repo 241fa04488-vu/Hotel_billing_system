@@ -17,6 +17,7 @@ urlpatterns = [
     path('customer/order-food/', views.customer_order_food, name='customer_order_food'),
     path('customer/orders/<int:pk>/status/', views.customer_order_status, name='customer_order_status'),
     path('customer/verify-otp/', views.customer_verify_otp, name='customer_verify_otp'),
+    path('booking-requests/', views.booking_request_list, name='booking_request_list'),
     
     # Rooms & Inventories
     path('rooms/', views.room_list, name='room_list'),

@@ -171,4 +171,68 @@
         </div>
     </div>
 </div>
+
+<!-- Recent Booking Requests section -->
+<div class="glass-card" style="margin-top: 2rem; display: flex; flex-direction: column;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Recent Guest Booking Requests</h2>
+        <a href="{% url 'booking_request_list' %}" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.25rem;">
+            <span>View All Requests</span>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </a>
+    </div>
+    
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Created At</th>
+                    <th>Customer</th>
+                    <th>Chamber</th>
+                    <th>Dates</th>
+                    <th>Nights</th>
+                    <th>Guests</th>
+                    <th>Estimated Total</th>
+                    <th style="text-align: right;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in recent_booking_requests %}
+                <tr>
+                    <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ req.created_at|date:"M d, Y H:i" }}</td>
+                    <td style="font-weight: 600;">{{ req.customer.first_name }} {{ req.customer.last_name }} <span style="font-weight: normal; font-size: 0.75rem; color: var(--text-muted);">@{{ req.customer.username }}</span></td>
+                    <td>
+                        {% if req.room %}
+                        <span class="badge badge-info">{{ req.room.room_number }}</span>
+                        {% else %}
+                        <span class="badge badge-danger">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ req.check_in_date|date:"M d" }} - {{ req.check_out_date|date:"M d, Y" }}</td>
+                    <td>{{ req.nights_count }}</td>
+                    <td>x{{ req.num_guests }}</td>
+                    <td style="font-weight: 700; color: var(--primary);">₹{{ req.estimated_total|floatformat:2 }}</td>
+                    <td style="text-align: right;">
+                        {% if req.status == 'Approved' %}
+                        <span class="badge badge-success">Approved</span>
+                        {% elif req.status == 'Rejected' %}
+                        <span class="badge badge-danger">Rejected</span>
+                        {% else %}
+                        <span class="badge badge-warning">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        No guest room booking requests.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
