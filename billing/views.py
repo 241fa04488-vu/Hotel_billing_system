@@ -747,7 +747,8 @@ def send_booking_email(user, room, check_in, check_out, invoice):
     from django.template.loader import render_to_string
     from django.utils.html import strip_tags
 
-    subject = f"La_Makaan Hotels Stay Confirmation - Room {room.room_number}"
+    room_number = room.room_number if room else "N/A"
+    subject = f"La_Makaan Hotels Stay Confirmation - Room {room_number}"
     
     customer_name = f"{user.first_name} {user.last_name}".strip()
     if not customer_name:
