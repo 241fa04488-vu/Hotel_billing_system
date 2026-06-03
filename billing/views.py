@@ -1397,8 +1397,8 @@ def invoice_send_print_otp(request, pk):
 def invoice_verify_print_otp(request, pk):
     from django.http import JsonResponse
     
-    if request.method == 'POST':
-        entered_otp = request.POST.get('otp_code', '').strip()
+    if request.method in ['POST', 'GET']:
+        entered_otp = (request.POST.get('otp_code') or request.GET.get('otp_code', '')).strip()
         session_otp = request.session.get('print_otp')
         session_inv = request.session.get('print_otp_inv')
         

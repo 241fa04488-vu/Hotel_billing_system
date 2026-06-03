@@ -495,7 +495,7 @@ class BookingAuditTest(TestCase):
         self.client.login(username="testcustomer", password="password123")
         
         # 1. Trigger Print OTP
-        response = self.client.post(reverse('invoice_send_print_otp', args=[invoice.pk]))
+        response = self.client.get(reverse('invoice_send_print_otp', args=[invoice.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['status'], 'success')
         
@@ -512,12 +512,12 @@ class BookingAuditTest(TestCase):
         self.assertIn("Receipt Print Authorization Code", mail.outbox[0].subject)
         
         # 2. Verify with wrong OTP code
-        response = self.client.post(reverse('invoice_verify_print_otp', args=[invoice.pk]), {'otp_code': '999999'})
+        response = self.client.get(reverse('invoice_verify_print_otp', args=[invoice.pk]), {'otp_code': '999999'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['status'], 'error')
         
         # 3. Verify with correct OTP code
-        response = self.client.post(reverse('invoice_verify_print_otp', args=[invoice.pk]), {'otp_code': otp_code})
+        response = self.client.get(reverse('invoice_verify_print_otp', args=[invoice.pk]), {'otp_code': otp_code})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['status'], 'success')
         
