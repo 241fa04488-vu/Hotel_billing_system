@@ -71,6 +71,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (triggerChime) {
         playSuccessChime();
     }
+
+    // 5. Play notification sound when clicking any "Print Receipt" button/link
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('a, button');
+        if (target) {
+            const text = target.textContent.toLowerCase();
+            const href = target.getAttribute('href') || '';
+            if (text.includes('print receipt') || href.includes('/print/')) {
+                playSuccessChime();
+            }
+        }
+    });
 });
 
 function initInvoiceCalculator() {
