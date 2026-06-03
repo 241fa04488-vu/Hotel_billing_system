@@ -526,6 +526,25 @@ class BookingAuditTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'invoice_print.html')
 
+    def test_invoice_print_view_blocked_without_otp(self):
+        from billing.models import Invoice
+        invoice = Invoice.objects.create(
+            customer_user=self.customer,
+            customer_name="Test Customer Receipt",
+            customer_email="testcustomer@example.com",
+            room=self.room,
+            check_in_date=date.today(),
+            check_out_date=date.today() + timedelta(days=3),
+            room_charges=15000.00,
+            payment_status="Paid",
+            payment_method="UPI"
+        )
+        self.client.login(username="testcustomer", password="password123")
+        response = self.client.get(reverse('invoice_print_view', args=[invoice.pk]))
+        # Accessing print view without OTP should redirect to invoice detail page
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('invoice_detail', args=[invoice.pk]))
+
 
 class CancellationAndValidationTest(TestCase):
     def setUp(self):

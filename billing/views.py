@@ -1413,6 +1413,11 @@ def invoice_print_view(request, pk):
         messages.error(request, "Access denied. You do not have permission to print this invoice.")
         return redirect('customer_portal')
         
+    # Check if print is authorized via OTP
+    if request.session.get('print_authorized_inv') != pk:
+        messages.error(request, "Print authorization required. Please verify OTP first.")
+        return redirect('invoice_detail', pk=pk)
+        
     items = invoice.items.all()
     subtotal = invoice.room_charges + (invoice.extra_charges or 0)
     

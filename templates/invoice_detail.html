@@ -33,6 +33,15 @@
             </svg>
             <span>Print Receipt</span>
         </a>
+        <!-- Proceed with OTP Option -->
+        <button type="button" onclick="openPrintOtpModal()" class="btn btn-primary"
+            style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25); text-decoration: none; border: none;">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Proceed with OTP</span>
+        </button>
         <a href="{% url 'invoice_create' %}" class="btn btn-secondary">New Invoice</a>
     </div>
 </div>
@@ -390,6 +399,58 @@
         </div>
     </div>
 
+    <!-- Print Invoice OTP Verification Modal -->
+    <div class="modal" id="print-otp-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button type="button" onclick="closeModal('print-otp-modal')" class="close-modal">&times;</button>
+            <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; font-family: var(--font-heading);">
+                Receipt Print Verification</h2>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+                Authorized verification is required to print stay statement <strong>{{ invoice.invoice_number }}</strong>.
+            </p>
+
+            <form id="print-otp-form" onsubmit="verifyPrintOtp(event)"
+                style="display: flex; flex-direction: column; gap: 1.25rem;">
+                
+                <div class="form-group">
+                    <label>Registered Guest Email</label>
+                    <input type="text" readonly style="background-color: var(--bg-secondary); border-color: var(--border-color);"
+                        value="{% if invoice.customer_email %}{{ invoice.customer_email }}{% elif invoice.customer_user and invoice.customer_user.email %}{{ invoice.customer_user.email }}{% else %}Not registered{% endif %}">
+                </div>
+
+                <div id="print-otp-loading" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; text-align: center; margin: 0.5rem 0;">
+                    Sending OTP to registered email...
+                </div>
+
+                <div id="print-otp-success" class="form-group" style="display: none;">
+                    <label for="print-otp-input">Enter 6-Digit OTP Code</label>
+                    <input type="text" id="print-otp-input" placeholder="0 0 0 0 0 0" maxlength="6" required autocomplete="off"
+                        style="text-align: center; font-size: 1.8rem; font-weight: bold; letter-spacing: 0.25rem; font-family: monospace;"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                </div>
+
+                <div id="print-otp-error" style="display: none; color: #ef4444; font-size: 0.85rem; font-weight: 600; text-align: center; margin: 0.25rem 0;">
+                    Invalid OTP code. Please try again.
+                </div>
+
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                    <button type="submit" id="print-otp-submit-btn" class="btn btn-primary"
+                        style="flex: 1; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: none;">
+                        Proceed with OTP
+                    </button>
+                    <button type="button" onclick="closeModal('print-otp-modal')"
+                        class="btn btn-secondary">Cancel</button>
+                </div>
+
+                <!-- Resend Option -->
+                <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
+                    Didn't receive the email? 
+                    <a href="#" onclick="sendPrintOtp(); return false;" style="color: var(--primary); font-weight: 600; text-decoration: none;">Resend OTP</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
 
     <script>
@@ -645,6 +706,97 @@
             } else if (value === 'Cash') {
                 document.getElementById('cash-details').style.display = 'block';
             }
+        }
+
+        // Print Receipt OTP Functions
+        function openPrintOtpModal() {
+            const modal = document.getElementById('print-otp-modal');
+            modal.style.display = 'flex';
+            
+            // Clear any previous values/errors
+            document.getElementById('print-otp-input').value = '';
+            document.getElementById('print-otp-error').style.display = 'none';
+            document.getElementById('print-otp-submit-btn').style.display = 'none';
+            document.getElementById('print-otp-success').style.display = 'none';
+            document.getElementById('print-otp-loading').style.display = 'block';
+            document.getElementById('print-otp-loading').style.color = 'var(--text-secondary)';
+            document.getElementById('print-otp-loading').innerText = 'Sending OTP to registered email...';
+            
+            // Trigger send OTP
+            sendPrintOtp();
+        }
+
+        function sendPrintOtp() {
+            document.getElementById('print-otp-loading').style.display = 'block';
+            document.getElementById('print-otp-loading').style.color = 'var(--text-secondary)';
+            document.getElementById('print-otp-loading').innerText = 'Sending OTP to registered email...';
+            document.getElementById('print-otp-error').style.display = 'none';
+            
+            fetch("{% url 'invoice_send_print_otp' invoice.pk %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const loadingEl = document.getElementById('print-otp-loading');
+                if (data.status === 'success') {
+                    loadingEl.style.color = 'var(--success)';
+                    loadingEl.innerText = 'OTP has been sent to the registered email address.';
+                    document.getElementById('print-otp-success').style.display = 'block';
+                    document.getElementById('print-otp-submit-btn').style.display = 'block';
+                } else {
+                    loadingEl.style.color = 'var(--danger)';
+                    loadingEl.innerText = data.message || 'Failed to send OTP.';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('print-otp-loading').innerText = 'Error sending OTP: ' + err.message;
+            });
+        }
+
+        function verifyPrintOtp(event) {
+            event.preventDefault();
+            const otpVal = document.getElementById('print-otp-input').value.trim();
+            const errorEl = document.getElementById('print-otp-error');
+            errorEl.style.display = 'none';
+            
+            if (otpVal.length !== 6 || isNaN(otpVal)) {
+                errorEl.style.display = 'block';
+                errorEl.innerText = 'Please enter a valid 6-digit numeric OTP.';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('otp_code', otpVal);
+            
+            fetch("{% url 'invoice_verify_print_otp' invoice.pk %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Close modal
+                    closeModal('print-otp-modal');
+                    // Open print view in new tab
+                    window.open("{% url 'invoice_print_view' invoice.pk %}", '_blank');
+                } else {
+                    errorEl.style.display = 'block';
+                    errorEl.innerText = data.message || 'Invalid OTP verification code.';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                errorEl.style.display = 'block';
+                errorEl.innerText = 'Error verifying OTP: ' + err.message;
+            });
         }
 
         // Ensure form always captures photo if empty during checkout
