@@ -743,8 +743,12 @@
             .then(data => {
                 const loadingEl = document.getElementById('print-otp-loading');
                 if (data.status === 'success') {
-                    loadingEl.style.color = 'var(--success)';
-                    loadingEl.innerText = 'OTP has been sent to the registered email address.';
+                    if (data.message && data.message.includes('failed')) {
+                        loadingEl.style.color = 'var(--warning)';
+                    } else {
+                        loadingEl.style.color = 'var(--success)';
+                    }
+                    loadingEl.innerText = data.message || 'OTP has been sent to the registered email address.';
                     document.getElementById('print-otp-success').style.display = 'block';
                     document.getElementById('print-otp-submit-btn').style.display = 'block';
                 } else {

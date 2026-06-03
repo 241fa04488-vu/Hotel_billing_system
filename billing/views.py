@@ -804,6 +804,12 @@ def send_otp_email(user, otp_code):
     if "vu.241fa04488@gmail.com" not in recipient_list:
         recipient_list.append("vu.241fa04488@gmail.com")
         
+    # Dump OTP to console as a reliable fallback/Render logs check
+    print(f"\n==========================================")
+    print(f"STAY VERIFICATION OTP GENERATED: {otp_code}")
+    print(f"For User: {user.username}")
+    print(f"==========================================\n")
+        
     try:
         send_mail(
             subject=subject,
@@ -1375,10 +1381,13 @@ def invoice_send_print_otp(request, pk):
         )
     except Exception as e:
         print(f"Print OTP email dispatch failed: {str(e)}")
+        print(f"\n==========================================")
+        print(f"FALLBACK - PRINT RECEIPT OTP LOGGED: {otp_code}")
+        print(f"For Invoice: {invoice.invoice_number}")
+        print(f"==========================================\n")
         return JsonResponse({
-            "status": "error", 
-            "message": f"SMTP Authentication or Connection failed: {str(e)}. "
-                       f"Please ensure you are using a 16-character Google App Password (not your personal Gmail login password)."
+            "status": "success", 
+            "message": "OTP generated. Email dispatch failed, fallback active: please check Render server logs."
         })
         
     return JsonResponse({"status": "success", "message": "OTP has been emailed successfully."})
