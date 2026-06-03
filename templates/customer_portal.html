@@ -733,6 +733,22 @@
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
     }
+
+    // Save current guest email and phone to localStorage so they are never lost
+    (function() {
+        const username = "{{ request.user.username|escapejs }}";
+        const email = "{{ request.user.email|escapejs }}";
+        const phone = "{{ request.user.profile.phone|escapejs }}";
+        
+        if (username) {
+            if (email && email !== (username + "@domain.com") && email !== "None") {
+                localStorage.setItem('guest_email_' + username.toLowerCase(), email);
+            }
+            if (phone && phone !== "None") {
+                localStorage.setItem('guest_phone_' + username.toLowerCase(), phone);
+            }
+        }
+    })();
 </script>
 
 <style>

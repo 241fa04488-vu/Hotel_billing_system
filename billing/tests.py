@@ -961,6 +961,42 @@ class CancellationAndValidationTest(TestCase):
         # Subtotal = 5000. Tax = 5000 * 12% = 600. Total = 5600
         self.assertEqual(invoice.grand_total, 5600.00)
 
+    def test_customer_login_localStorage_restore(self):
+        # Post to customer login form with username, password, email, and phone
+        post_data = {
+            'username': 'newguest',
+            'password': 'newguest123',
+            'email': 'savedemail@example.com',
+            'phone': '9876543210'
+        }
+        # First login will auto-register the customer
+        response = self.client.post(reverse('customer_login'), post_data)
+        self.assertEqual(response.status_code, 302)
+        
+        # Verify customer was created with the correct email and phone
+        user = User.objects.filter(username='newguest').first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.email, 'savedemail@example.com')
+        self.assertEqual(user.profile.phone, '9876543210')
+        
+        # Now, modify the database values to simulate a database wipe/reset
+        user.email = 'placeholder@example.com'
+        user.profile.phone = '0000000000'
+        user.save()
+        user.profile.save()
+        
+        # Log out to clear session credentials
+        self.client.logout()
+        
+        # Logging in again with the email and phone posted should restore them in the database!
+        response = self.client.post(reverse('customer_login'), post_data)
+        self.assertEqual(response.status_code, 302)
+        
+        user.refresh_from_db()
+        user.profile.refresh_from_db()
+        self.assertEqual(user.email, 'savedemail@example.com')
+        self.assertEqual(user.profile.phone, '9876543210')
+
 
 
 

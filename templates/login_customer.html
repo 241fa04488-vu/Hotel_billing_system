@@ -30,6 +30,8 @@
 
                 <form method="POST" action="{% url 'customer_login' %}" style="display: flex; flex-direction: column; gap: 1.25rem;">
                     {% csrf_token %}
+                    <input type="hidden" id="cust-email-hidden" name="email">
+                    <input type="hidden" id="cust-phone-hidden" name="phone">
                     <div class="form-group">
                         <label for="cust-username" style="font-size:0.75rem;">Username</label>
                         <input type="text" id="cust-username" name="username" placeholder="Enter any username" required style="border-color: rgba(244, 63, 94, 0.15); background-color: rgba(0,0,0,0.25); padding: 0.6rem 0.8rem; font-size: 0.9rem;">
@@ -148,6 +150,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const usernameInput = document.getElementById('cust-username');
     const passwordInput = document.getElementById('cust-password');
+    const emailHidden = document.getElementById('cust-email-hidden');
+    const phoneHidden = document.getElementById('cust-phone-hidden');
     const form = usernameInput ? usernameInput.closest('form') : null;
 
     if (usernameInput && passwordInput && form) {
@@ -157,11 +161,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedUsername) usernameInput.value = savedUsername;
         if (savedPassword) passwordInput.value = savedPassword;
 
-        // Save credentials on submission
+        // Save credentials on submission and auto-fill hidden fields
         form.addEventListener('submit', () => {
-            if (usernameInput.value && passwordInput.value) {
+            const username = usernameInput.value.trim().toLowerCase();
+            if (username && passwordInput.value) {
                 localStorage.setItem('cust_username', usernameInput.value);
                 localStorage.setItem('cust_password', passwordInput.value);
+                
+                // Retrieve guest specific phone/email
+                const storedEmail = localStorage.getItem('guest_email_' + username);
+                const storedPhone = localStorage.getItem('guest_phone_' + username);
+                if (storedEmail) emailHidden.value = storedEmail;
+                if (storedPhone) phoneHidden.value = storedPhone;
             }
         });
     }

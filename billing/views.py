@@ -505,6 +505,10 @@ def customer_login(request):
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         
+        # Stored inputs from localStorage to prevent loss if database is reset/cleared
+        email_val = request.POST.get('email', '').strip()
+        phone_val = request.POST.get('phone', '').strip()
+        
         if not username or not password:
             messages.error(request, "Please enter both username and password.")
             return render(request, 'login_customer.html')
@@ -515,20 +519,26 @@ def customer_login(request):
             if not user:
                 user = User.objects.create_user(
                     username=username,
-                    email=f"{username}@domain.com",
+                    email=email_val or f"{username}@domain.com",
                     password=password,
                     first_name=username.capitalize(),
                     last_name="Guest"
                 )
                 user.profile.role = 'Customer'
+                if phone_val:
+                    user.profile.phone = phone_val
                 user.profile.save()
             else:
                 existing_role = getattr(user.profile, 'role', None) if getattr(user, 'profile', None) else None
                 if existing_role not in ['Staff', 'Manager']:
                     user.set_password(password)
+                    if email_val:
+                        user.email = email_val
                     user.save()
                     if getattr(user, 'profile', None):
                         user.profile.role = 'Customer'
+                        if phone_val:
+                            user.profile.phone = phone_val
                         user.profile.save()
         else:
             messages.error(request, f"Invalid password. For guest login, password must be '{username}123'.")
