@@ -727,16 +727,27 @@
         }
 
         function sendPrintOtp() {
-            document.getElementById('print-otp-loading').style.display = 'block';
-            document.getElementById('print-otp-loading').style.color = 'var(--text-secondary)';
-            document.getElementById('print-otp-loading').innerText = 'Sending OTP to registered email...';
             document.getElementById('print-otp-error').style.display = 'none';
             
             fetch("{% url 'invoice_send_print_otp' invoice.pk %}", {
                 method: "GET",
                 credentials: "same-origin"
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    throw new Error("Session expired. Redirecting to login page...");
+                }
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        console.error("Non-JSON Server Response: ", text);
+                        throw new Error("Server returned HTML instead of JSON. Check logs/console.");
+                    });
+                }
+            })
             .then(data => {
                 const loadingEl = document.getElementById('print-otp-loading');
                 if (data.status === 'success') {
@@ -758,7 +769,7 @@
                 document.getElementById('print-otp-loading').innerText = 'Error sending OTP: ' + err.message;
             });
         }
-
+ 
         function verifyPrintOtp(event) {
             event.preventDefault();
             const otpVal = document.getElementById('print-otp-input').value.trim();
@@ -775,7 +786,21 @@
                 method: "GET",
                 credentials: "same-origin"
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    throw new Error("Session expired. Redirecting to login page...");
+                }
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        console.error("Non-JSON Server Response: ", text);
+                        throw new Error("Server returned HTML instead of JSON. Check logs/console.");
+                    });
+                }
+            })
             .then(data => {
                 if (data.status === 'success') {
                     // Close modal
